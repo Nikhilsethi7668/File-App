@@ -1,6 +1,5 @@
-const XLSX = require("xlsx");
-const User = require("../models/User");
-
+import XLSX from "xlsx";
+import User from "../models/userModel";
 exports.uploadFile = async (req, res) => {
   try {
     const workbook = XLSX.readFile(req.file.path);

@@ -1,6 +1,6 @@
-const express = require("express");
-const { uploadFile, parseFile } = require("../controllers/fileController");
-const uploadMiddleware = require("../middleware/uploadMiddleware");
+import express from "express"; 
+import { uploadFile, parseFile } from "../controller/fileController"; 
+import uploadMiddleware from "../middleware/uploadMiddleware";
 
 const router = express.Router();
 
