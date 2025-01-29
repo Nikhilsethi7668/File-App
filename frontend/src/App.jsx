@@ -1,23 +1,22 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import FileUpload from "./components/FileUpload";
-import Dashboard from "./components/Dashboard";
-import UserSearch from "./components/UserSearch";
-import BookingPage from "./components/BookingPage";
-import Navbar from "./Components/Navbar";
+
+
+
+// import Navbar from "./Components/Navbar";
+import UploadFile from "./Pages/UploadFile.jsx";
 // import Navbar from "./components/Navbar";
 
 function App() {
   return (
-    <Router>
-      <Navbar/>
+    // <Router>
+      // <Navbar/>
       <Routes>
-        <Route path="/" element={<FileUpload />} /> {/* Landing Page */}
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/search" element={<UserSearch />} />
-        <Route path="/booking" element={<BookingPage />} />
+        <Route path="/" element={<UploadFile />} /> {/* Landing Page */}
+        
+       
       </Routes>
-    </Router>
+    // </Router>
   );
 }
 
