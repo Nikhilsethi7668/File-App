@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema({
       title: String,
       email: String,
       phone: String,
+      selectedBy:[String],
     },
   ],
 });

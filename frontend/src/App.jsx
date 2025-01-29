@@ -10,12 +10,12 @@ import UploadFile from "./Pages/UploadFile.jsx";
 function App() {
   return (
     // <Router>
-      // <Navbar/>
-      <Routes>
-        <Route path="/" element={<UploadFile />} /> {/* Landing Page */}
-        
-       
-      </Routes>
+    // <Navbar/>
+    <Routes>
+      <Route path="/" element={<UploadFile />} /> {/* Landing Page */}
+
+
+    </Routes>
     // </Router>
   );
 }
