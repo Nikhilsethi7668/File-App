@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
 // import Navbar from "./Components/Navbar";
 import UploadFile from "./Pages/UploadFile.jsx";
+import Dashboard from "./Pages/Dashboard.jsx";
 // import Navbar from "./components/Navbar";
 
 function App() {
@@ -12,7 +13,7 @@ function App() {
     // <Router>
     // <Navbar/>
     <Routes>
-      <Route path="/" element={<UploadFile />} /> {/* Landing Page */}
+      <Route path="/" element={<Dashboard />} /> {/* Landing Page */}
 
 
     </Routes>
