@@ -2,7 +2,7 @@ import { User } from "../model/auth.model.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { generateTokenAndCookie } from "../utils/generateToken.js";
-import { sendVerificationEmail } from "../mailtrap/email.js";
+//import { sendVerificationEmail } from "../mailtrap/email.js";
 import { sendWelcomeEmail } from "../mailtrap/email.js";
 import { sendPasswordResetEmail } from "../mailtrap/email.js";
 import { sendResetSuccessEmail } from "../mailtrap/email.js";
@@ -53,7 +53,7 @@ export const signup = async (req, res) => {
 
     generateTokenAndCookie(res, user._id);
 
-    await sendVerificationEmail(user.email, verificationToken);
+    //await sendVerificationEmail(user.email, verificationToken);
 
     res.status(201).json({
       success: true,
