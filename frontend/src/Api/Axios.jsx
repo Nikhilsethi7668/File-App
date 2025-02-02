@@ -2,7 +2,7 @@ import axios from 'axios'
 import React from 'react'
 
 const Axios = axios.create({
-    baseURL: "http://localhost:4000",
+    baseURL: "http://localhost:5000/api",
     withCredentials: true,
     timeout: 5000,
     headers: {

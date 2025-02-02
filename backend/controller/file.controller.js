@@ -1,15 +1,6 @@
 import xlsx from "xlsx";
 import { UserCollection } from "../model/filedata.model.js";
 
-<<<<<<< HEAD
-
-
-
-
-
-
-=======
->>>>>>> 7d654731f9a0f937c9741af19fb6aa29d69071ca
 export const uploadFile = async (req, res) => {
   try {
     if (!req.file) {
@@ -22,7 +13,7 @@ export const uploadFile = async (req, res) => {
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
 
-<<<<<<< HEAD
+
     const users = data.map((row) => {
       const selectedBy = [];
       const columnMapping = {
@@ -52,7 +43,7 @@ export const uploadFile = async (req, res) => {
 
     // Upsert (Update or Insert) instead of deleting all data
     await UserCollection.updateOne({}, { $set: { users } }, { upsert: true });
-=======
+
     // Convert sheet to JSON (first row as headers)
     const data = xlsx.utils.sheet_to_json(sheet, { header: 1, raw: false });
 
@@ -140,7 +131,7 @@ export const uploadFile = async (req, res) => {
     } else {
       return res.status(400).json({ error: "No valid data to insert" });
     }
->>>>>>> 7d654731f9a0f937c9741af19fb6aa29d69071ca
+
 
     return res.status(200).json({
       message: "File processed and data saved successfully",

@@ -2,16 +2,18 @@ import express, { urlencoded } from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 
 // All connections here
 import connectDb from "./lib/db.js";
 
 // All routes here
 import fileRoutes from "./routes/file.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 5000;
 
 // CORS Configuration (Apply this before routes)
 const corsOptions = {
@@ -23,8 +25,10 @@ app.use(cors(corsOptions)); // <-- Fix: Apply CORS Middleware Here
 // Middleware
 app.use(express.json());
 app.use(urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // All routes here
+app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 
 app.listen(PORT, async () => {
