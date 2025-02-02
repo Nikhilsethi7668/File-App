@@ -4,14 +4,14 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 // All connections here
-import { connectDb } from "./lib/db.js";
+import connectDb from "./lib/db.js";
 
 // All routes here
 import fileRoutes from "./routes/file.routes.js";
 
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 // CORS Configuration (Apply this before routes)
 const corsOptions = {

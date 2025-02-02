@@ -1,33 +1,16 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React from 'react'
+import Hero from '../Components/Dashboard/Hero'
+import FileUpload from './UploadFile'
 
-function Dashboard() {
-    const [insights, setInsights] = useState(null);
-
-    useEffect(() => {
-        const fetchInsights = async () => {
-            const { data } = await axios.get("/api/insights"); // API for insights
-            setInsights(data);
-        };
-        fetchInsights();
-    }, []);
-
-    if (!insights) return <p>Loading...</p>;
-
+const Dashboard = () => {
     return (
-        <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">Dashboard</h2>
-            <div>Total Users: {insights.totalUsers}</div>
-            <div>Company-wise Selections:</div>
-            <ul>
-                {insights.companyWiseSelections.map((company) => (
-                    <li key={company.name}>
-                        {company.name}: {company.count} users
-                    </li>
-                ))}
-            </ul>
+        <div className='w-[100%] h-full'>
+            <Hero />
+            <FileUpload />
+
+
         </div>
-    );
+    )
 }
 
-export default Dashboard;
+export default Dashboard

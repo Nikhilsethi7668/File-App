@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from "react";
+import Axios from "../Api/Axios";
+import { uploadFile } from "../Api/Api";
+
+
 
 const FileUpload = () => {
   const [file, setFile] = useState(null);
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
+  useEffect(() => {
+    console.log(data);
+  }, [data])
 
   const handleUpload = async () => {
     if (!file) {
@@ -21,18 +28,21 @@ const FileUpload = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/files/upload-file", {
-        method: "POST",
-        body: formData,
-      });
+      //upload file 
+      // const response = await fetch("http://localhost:4000/api/files/upload-file", {
+      //   method: "POST",
+      //   body: formData,
+      // });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Upload failed");
-      }
+      // if (!response.ok) {
+      //   const errorData = await response.json();
+      //   throw new Error(errorData.error || "Upload failed");
+      // }
 
       alert("File uploaded successfully!");
-      fetchData();
+
+      // get data
+      await fetchData();
     } catch (error) {
       console.error("Upload error:", error);
       alert("File upload failed: " + error.message);
@@ -44,12 +54,15 @@ const FileUpload = () => {
   const fetchData = async () => {
     setFetching(true);
     try {
-      const response = await fetch("http://localhost:5000/api/files/get-filedata");
+      const response = await fetch("http://localhost:4000/api/files/get-filedata");
       if (!response.ok) {
         throw new Error("Failed to fetch data");
       }
+      console.log(response)
       const jsonData = await response.json();
+      console.log("json data is", jsonData)
       setData(jsonData.users || []); // Ensure users exist
+      console.log(jsonData)
     } catch (error) {
       console.error("Error fetching data:", error);
       alert("Error fetching data: " + error.message);
@@ -65,21 +78,21 @@ const FileUpload = () => {
   const formatSelectedBy = (selectedBy) => {
     return selectedBy.length > 0 ? selectedBy.join(", ") : "N/A";
   };
-  
+
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Upload Excel File</h1>
       <div className="flex gap-4 mb-6">
-        <input 
-          type="file" 
-          onChange={handleFileChange} 
+        <input
+          type="file"
+          onChange={handleFileChange}
           className="flex-1 border p-2 rounded"
           accept=".xlsx,.xls"
         />
-        <button 
-          onClick={handleUpload} 
-          disabled={loading} 
+        <button
+          onClick={handleUpload}
+          disabled={loading}
           className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded disabled:bg-blue-300"
         >
           {loading ? "Uploading..." : "Upload"}
