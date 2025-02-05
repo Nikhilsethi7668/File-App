@@ -121,3 +121,36 @@ export const getFileData = async (req, res) => {
     });
   }
 };
+// import { UserCollection } from "../model/filedata.model.js";
+
+export const deleteSlot = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    console.log("user id is", userId);
+    const { slotTime } = req.body;
+    console.log(slotTime);
+
+    if (!userId || !slotTime) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const user = await UserCollection.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    console.log(user.slots);
+    console.log(user.slots.get(slotTime));
+
+    if (user.slots && user.slots.get(slotTime)) {
+      user.slots.delete(slotTime); // Use the delete method to remove the slot
+      await user.save();
+      return res.status(200).json({ message: "Slot deleted successfully" });
+    } else {
+      return res.status(404).json({ error: "Slot not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting slot:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
