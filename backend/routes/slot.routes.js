@@ -1,7 +1,7 @@
-router.post("/book", async (req, res) => {
-  const { userId, timeSlot } = req.body;
+import express from "express";
+import { bookSlots } from "../controller/slot.controller";
+const router = express.Router();
 
-  // Mark the slot as booked
-  await Slot.updateOne({ userId, timeSlot }, { status: "booked" });
-  res.json({ message: "Slot booked successfully" });
-});
+router.post(`/booking-slot/:id`, bookSlots);
+
+export default router;

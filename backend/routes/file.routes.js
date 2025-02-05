@@ -11,4 +11,5 @@ router.post("/upload-file", upload.single("file"), uploadFile);
 // Get file data route
 router.get("/get-filedata", getFileData);
 
+
 export default router;

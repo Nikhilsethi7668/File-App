@@ -8,41 +8,8 @@ export const uploadFile = async (req, res) => {
     }
 
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
-
-    // Get the first sheet (index 0)
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-
-
-    const users = data.map((row) => {
-      const selectedBy = [];
-      const columnMapping = {
-        outsystems: "1:1 meeting Outsystems (5)",
-        vmware: "1:1 meeting Vmware (5)",
-        rackspace: "1:1 meetings rackspace/google",
-        awswl: "AWS WL",
-      };
-
-      Object.entries(columnMapping).forEach(([key, columnName]) => {
-        if (["1", "1PTR", "1CORP"].includes(row[columnName]?.trim())) {
-          selectedBy.push(columnName);
-        }
-      });
-
-      return {
-        serialNo: row["Sr. No"] || "N/A",
-        firstName: row["First Name"] || "N/A",
-        lastName: row["Last Name"] || "N/A",
-        company: row["Company Name"] || "N/A",
-        title: row["Title"] || "N/A",
-        email: row["Email Address"] || "N/A",
-        phone: row["Mobile Phone Number"] || "N/A",
-        selectedBy,
-      };
-    });
-
-    // Upsert (Update or Insert) instead of deleting all data
-    await UserCollection.updateOne({}, { $set: { users } }, { upsert: true });
 
     // Convert sheet to JSON (first row as headers)
     const data = xlsx.utils.sheet_to_json(sheet, { header: 1, raw: false });
@@ -54,7 +21,7 @@ export const uploadFile = async (req, res) => {
     }
 
     // Extract headers from the first row
-    const headers = data[0].map((h) => h.trim().toLowerCase()); // Normalize headers
+    const headers = data[0].map((h) => h.trim().toLowerCase());
     console.log("Detected headers:", headers);
 
     // Remove header row
@@ -71,7 +38,7 @@ export const uploadFile = async (req, res) => {
       phone: "phone",
     };
 
-    const selectionValues = ["1", "1 PTR", "1 CORP", "1 STR", "1 CORP"]; // Values indicating selection
+    const selectionValues = new Set(["1", "1 ptr", "1 corp", "1 str"]);
 
     // Identify column indexes based on mapping
     const fieldIndexes = {};
@@ -81,7 +48,7 @@ export const uploadFile = async (req, res) => {
       }
     });
 
-    // Identify company selection columns (everything apart from main schema fields)
+    // Identify company selection columns (non-schema columns)
     const companyColumns = headers.filter(
       (col) => !Object.keys(fieldMappings).includes(col)
     );
@@ -89,49 +56,45 @@ export const uploadFile = async (req, res) => {
     // Process each row dynamically
     const processedData = data
       .map((row) => {
-        let rowData = {};
+        const rowData = {};
 
-        // Extract required fields and map them
-        Object.keys(fieldIndexes).forEach((field) => {
-          const index = fieldIndexes[field];
-          if (index !== undefined) {
-            const value = row[index]?.toString().trim();
-            if (value) {
-              rowData[field] = value;
-            }
-          }
+        // Extract mapped fields
+        Object.entries(fieldIndexes).forEach(([field, index]) => {
+          const value = row[index]?.toString().trim();
+          if (value) rowData[field] = value;
         });
 
-        // Extract selected companies
-        let selectedBy = [];
+        // Check company selections
+        const selectedBy = [];
         companyColumns.forEach((company) => {
           const index = headers.indexOf(company);
-          if (index !== -1) {
-            const value = row[index]?.toString().trim().toUpperCase();
-            if (selectionValues.includes(value)) {
-              selectedBy.push(company);
-            }
+          if (index === -1) return;
+
+          const value = row[index]?.toString().trim().toLowerCase();
+          if (selectionValues.has(value)) {
+            selectedBy.push(company);
           }
         });
 
-        // Add selectedBy array if not empty
         if (selectedBy.length > 0) {
           rowData.selectedBy = selectedBy;
         }
 
-        return Object.keys(rowData).length > 0 ? rowData : null; // Ignore empty rows
+        return Object.keys(rowData).length > 0 ? rowData : null;
       })
-      .filter(Boolean); // Remove null rows
+      .filter(Boolean);
 
     console.log("Processed Data:", processedData);
 
-    // **SAVE TO DATABASE**
+    // Upsert data into database
+    // Replace the updateOne/upsert block with:
     if (processedData.length > 0) {
-      await UserCollection.insertMany(processedData); // Save data to MongoDB
+      // Clear existing data and insert fresh data
+      await UserCollection.deleteMany({}); // Remove all existing documents
+      await UserCollection.insertMany(processedData); // Insert new documents
     } else {
       return res.status(400).json({ error: "No valid data to insert" });
     }
-
 
     return res.status(200).json({
       message: "File processed and data saved successfully",
@@ -158,8 +121,3 @@ export const getFileData = async (req, res) => {
     });
   }
 };
-
-
-
-
-

@@ -1,21 +1,44 @@
-import React, { useState, useEffect } from "react";
-import Axios from "../Api/Axios";
-import { uploadFile } from "../Api/Api";
-
-
+import React, { useState, useEffect, useContext } from "react";
+import UserCard from "../Components/UserCard"; // Update import path as needed
+import UserContext from "../Context/UserContext";
 
 const FileUpload = () => {
   const [file, setFile] = useState(null);
-  const [data, setData] = useState(null);
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { userData, setUserData } = useContext(UserContext)
+
+  // Filter data based on search query
+  const filteredData = data.filter((user) => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      user.firstName?.toLowerCase().includes(searchLower) ||
+      user.lastName?.toLowerCase().includes(searchLower) ||
+      `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower)
+    );
+  });
+
+  // Generate time slots from 10:00 to 17:00
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 10; hour <= 17; hour++) {
+      slots.push(`${hour}:00`);
+      if (hour !== 17) slots.push(`${hour}:30`);
+    }
+    return slots;
+  };
+
+  // Get unique selectedBy options from all users
+  const getSelectedByOptions = () => {
+    const allOptions = data.flatMap((user) => user.selectedBy || []);
+    return [...new Set(allOptions)];
+  };
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
-  useEffect(() => {
-    console.log(data);
-  }, [data])
 
   const handleUpload = async () => {
     if (!file) {
@@ -28,20 +51,17 @@ const FileUpload = () => {
     setLoading(true);
 
     try {
-      //upload file 
-      // const response = await fetch("http://localhost:4000/api/files/upload-file", {
-      //   method: "POST",
-      //   body: formData,
-      // });
+      const response = await fetch("http://localhost:4000/api/files/upload-file", {
+        method: "POST",
+        body: formData,
+      });
 
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   throw new Error(errorData.error || "Upload failed");
-      // }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Upload failed");
+      }
 
       alert("File uploaded successfully!");
-
-      // get data
       await fetchData();
     } catch (error) {
       console.error("Upload error:", error);
@@ -54,15 +74,12 @@ const FileUpload = () => {
   const fetchData = async () => {
     setFetching(true);
     try {
-      const response = await fetch("http://localhost:5000/api/files/get-filedata");
-      if (!response.ok) {
-        throw new Error("Failed to fetch data");
-      }
-      console.log(response)
+      const response = await fetch("http://localhost:4000/api/files/get-filedata");
+      if (!response.ok) throw new Error("Failed to fetch data");
+
       const jsonData = await response.json();
-      console.log("json data is", jsonData)
-      setData(jsonData.users || []); // Ensure users exist
-      console.log(jsonData)
+      setUserData(jsonData.users);
+      setData(jsonData.users || []);
     } catch (error) {
       console.error("Error fetching data:", error);
       alert("Error fetching data: " + error.message);
@@ -75,64 +92,68 @@ const FileUpload = () => {
     fetchData();
   }, []);
 
-  const formatSelectedBy = (selectedBy) => {
-    return selectedBy.length > 0 ? selectedBy.join(", ") : "N/A";
-  };
-
-
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Upload Excel File</h1>
-      <div className="flex gap-4 mb-6">
-        <input
-          type="file"
-          onChange={handleFileChange}
-          className="flex-1 border p-2 rounded"
-          accept=".xlsx,.xls"
-        />
-        <button
-          onClick={handleUpload}
-          disabled={loading}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded disabled:bg-blue-300"
-        >
-          {loading ? "Uploading..." : "Upload"}
-        </button>
+      <h1 className="text-2xl font-bold mb-6">Conference Room Booking System</h1>
+
+      {/* Upload Section */}
+      <div className="bg-gray-50 p-4 rounded-lg mb-8 shadow-sm">
+        <div className="flex gap-4 mb-4">
+          <input
+            type="file"
+            onChange={handleFileChange}
+            className="flex-1 border p-2 rounded"
+            accept=".xlsx,.xls"
+          />
+          <button
+            onClick={handleUpload}
+            disabled={loading}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded disabled:bg-blue-300 transition-colors"
+          >
+            {loading ? "Uploading..." : "Upload Attendees"}
+          </button>
+        </div>
+        <p className="text-sm text-gray-600">
+          Upload an Excel file with attendee information (.xlsx or .xls format)
+        </p>
       </div>
 
+      {/* Search and Data Section */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search attendees by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+
+      {/* Data Display */}
       {fetching ? (
-        <p className="text-gray-500">Loading data...</p>
-      ) : data.length === 0 ? (
-        <p className="text-red-500">No data available. Upload a file to display records.</p>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading attendee data...</p>
+        </div>
+      ) : filteredData.length === 0 ? (
+        <div className="text-center p-8 bg-gray-50 rounded-lg">
+          <p className="text-red-500">
+            {data.length === 0
+              ? "No data available. Please upload an attendee file."
+              : "No attendees match your search."}
+          </p>
+        </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2 text-left">Sr. No</th>
-                <th className="border p-2 text-left">First Name</th>
-                <th className="border p-2 text-left">Last Name</th>
-                <th className="border p-2 text-left">Company</th>
-                <th className="border p-2 text-left">Title</th>
-                <th className="border p-2 text-left">Email</th>
-                <th className="border p-2 text-left">Phone</th>
-                <th className="border p-2 text-left">Selected By</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((user, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="border p-2">{user.serialNo}</td>
-                  <td className="border p-2">{user.firstName}</td>
-                  <td className="border p-2">{user.lastName}</td>
-                  <td className="border p-2">{user.company}</td>
-                  <td className="border p-2">{user.title}</td>
-                  <td className="border p-2">{user.email}</td>
-                  <td className="border p-2">{user.phone}</td>
-                  <td className="border p-2">{formatSelectedBy(user.selectedBy)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid gap-4">
+          {filteredData.map((user, index) => (
+            <UserCard
+              key={user._id || index}
+              user={user}
+              searchQuery={searchQuery}
+              selectedByOptions={getSelectedByOptions()}
+              timeSlots={generateTimeSlots()}
+            />
+          ))}
         </div>
       )}
     </div>

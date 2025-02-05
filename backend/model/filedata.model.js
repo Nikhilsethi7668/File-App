@@ -11,16 +11,9 @@ const UserSchema = new mongoose.Schema(
     phone: String,
     selectedBy: [String],
     slots: {
-      first: { type: String, default: "free" },
-      second: { type: String, default: "free" },
-      third: { type: String, default: "free" },
-      fourth: { type: String, default: "free" },
-      fifth: { type: String, default: "free" },
-      sixth: { type: String, default: "free" },
-      seventh: { type: String, default: "free" },
-      eighth: { type: String, default: "free" },
-      ninth: { type: String, default: "free" },
-      tenth: { type: String, default: "free" },
+      type: Map,
+      of: String, // Each key (time slot) stores a string value ("free" or "booked")
+      default: {},
     },
   },
   { timestamps: true }
