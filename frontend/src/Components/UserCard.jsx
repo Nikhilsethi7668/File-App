@@ -41,13 +41,13 @@ const UserCard = ({ user, searchQuery, selectedByOptions, timeSlots }) => {
             const response = await Axios.post(`/booking-slot/${user._id}`, data, {
                 headers: { "Content-Type": "application/json" }
             });
-            console.log("Booking submitted successfully:", response.data);
+            console.log(response);
 
             alert("Slot booked successfully!");
             setShowBookingForm(false);
         } catch (error) {
             console.error("Error booking slot:", error.response?.data || error.message);
-            alert("Failed to book slot. Please try again.");
+            alert("having issue while booking slot or Slot already booked");
         }
     };
 

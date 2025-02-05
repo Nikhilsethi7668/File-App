@@ -8,33 +8,7 @@ const FileUpload = () => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const { userData, setUserData } = useContext(UserContext)
-
-  // Filter data based on search query
-  const filteredData = data.filter((user) => {
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      user.firstName?.toLowerCase().includes(searchLower) ||
-      user.lastName?.toLowerCase().includes(searchLower) ||
-      `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower)
-    );
-  });
-
-  // Generate time slots from 10:00 to 17:00
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 10; hour <= 17; hour++) {
-      slots.push(`${hour}:00`);
-      if (hour !== 17) slots.push(`${hour}:30`);
-    }
-    return slots;
-  };
-
-  // Get unique selectedBy options from all users
-  const getSelectedByOptions = () => {
-    const allOptions = data.flatMap((user) => user.selectedBy || []);
-    return [...new Set(allOptions)];
-  };
+  const { userData, setUserData } = useContext(UserContext);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -78,8 +52,9 @@ const FileUpload = () => {
       if (!response.ok) throw new Error("Failed to fetch data");
 
       const jsonData = await response.json();
-      setUserData(jsonData.users);
+      setUserData(jsonData.users); // Ensure this sets the context state
       setData(jsonData.users || []);
+      console.log("Data fetched and set:", jsonData.users);
     } catch (error) {
       console.error("Error fetching data:", error);
       alert("Error fetching data: " + error.message);
@@ -91,6 +66,37 @@ const FileUpload = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Log userData when it changes
+  useEffect(() => {
+    console.log("User data updated in FileUpload:", userData);
+  }, [userData]);
+
+  // Filter data based on search query
+  const filteredData = data.filter((user) => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      user.firstName?.toLowerCase().includes(searchLower) ||
+      user.lastName?.toLowerCase().includes(searchLower) ||
+      `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower)
+    );
+  });
+
+  // Generate time slots from 10:00 to 17:00
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 10; hour <= 17; hour++) {
+      slots.push(`${hour}:00`);
+      if (hour !== 17) slots.push(`${hour}:30`);
+    }
+    return slots;
+  };
+
+  // Get unique selectedBy options from all users
+  const getSelectedByOptions = () => {
+    const allOptions = data.flatMap((user) => user.selectedBy || []);
+    return [...new Set(allOptions)];
+  };
 
   return (
     <div className="p-6 max-w-6xl mx-auto">

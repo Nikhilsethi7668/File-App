@@ -2,7 +2,7 @@ import React, { createContext, useState } from 'react'
 
 const UserContext = createContext();
 export const UserContextProvider = ({ children }) => {
-    const [userData, setUserData] = useState(null);
+    const [userData, setUserData] = useState([]);
 
 
     return (

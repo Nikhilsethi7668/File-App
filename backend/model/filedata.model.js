@@ -10,11 +10,7 @@ const UserSchema = new mongoose.Schema(
     email: String,
     phone: String,
     selectedBy: [String],
-    slots: {
-      type: Map,
-      of: String, // Each key (time slot) stores a string value ("free" or "booked")
-      default: {},
-    },
+    slots: { type: Map, of: String },
   },
   { timestamps: true }
 );
