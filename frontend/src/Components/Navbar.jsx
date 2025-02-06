@@ -16,7 +16,9 @@ const Navbar = () => {
             <div className="flex space-x-4">
                 <Link to="/" className="text-white">BookUserSlots</Link>
                 <Link to="/meeting" className="text-white">CheckUserBooking</Link>
+                <Link to="/company" className="text-white">CompanyData</Link>
             </div>
+
 
             {/* Right: Login/Logout Button */}
             <div>

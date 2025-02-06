@@ -1,10 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Axios from "../Api/Axios";
+import { CiClock2 } from "react-icons/ci";
 
-const UserCard = ({ user, searchQuery, selectedByOptions, timeSlots }) => {
+const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots }) => {
+    const [user, setUser] = useState(initialUser);
     const [showBookingForm, setShowBookingForm] = useState(false);
-    const [selectedCompany, setSelectedCompany] = useState(""); // Stores a single company
+    const [selectedCompany, setSelectedCompany] = useState("");
     const [selectedTime, setSelectedTime] = useState("");
+
+    useEffect(() => {
+        setUser(initialUser);
+    }, [initialUser]);
 
     // Highlight matching text in search results
     const highlightMatch = (text) => {
@@ -20,7 +26,7 @@ const UserCard = ({ user, searchQuery, selectedByOptions, timeSlots }) => {
     };
 
     const handleCompanyChange = (company) => {
-        setSelectedCompany(company); // Store only one company
+        setSelectedCompany(company);
     };
 
     const handleSubmit = async (e) => {
@@ -33,21 +39,29 @@ const UserCard = ({ user, searchQuery, selectedByOptions, timeSlots }) => {
 
         try {
             const data = {
-                userId: user._id, // Ensure correct user ID is sent
-                slotTime: selectedTime, // Selected time slot
-                company: selectedCompany, // Selected company
+                userId: user._id,
+                slotTime: selectedTime,
+                company: selectedCompany,
             };
 
             const response = await Axios.post(`/booking-slot/${user._id}`, data, {
                 headers: { "Content-Type": "application/json" }
             });
-            console.log(response);
+
+            // Update the user state to reflect the new booking
+            setUser(prevUser => ({
+                ...prevUser,
+                slots: {
+                    ...prevUser.slots,
+                    [selectedTime]: selectedCompany
+                }
+            }));
 
             alert("Slot booked successfully!");
             setShowBookingForm(false);
         } catch (error) {
-            console.error("Error booking slot:", error.response?.data || error.message);
-            alert("having issue while booking slot or Slot already booked");
+            console.error("Error booking slot:", error);
+            alert(error.response?.data?.message || "An error occurred while booking. Please try again.");
         }
     };
 
@@ -67,11 +81,31 @@ const UserCard = ({ user, searchQuery, selectedByOptions, timeSlots }) => {
                         <p>
                             🏷 Selected by: {user.selectedBy?.map(highlightMatch).join(", ") || "N/A"}
                         </p>
+                        {/* Display Booked Slots */}
+                        {user.slots && Object.keys(user.slots).length > 0 && (
+                            <div className="mt-2 p-2 border rounded bg-gray-50 text-sm">
+                                <p className="font-medium flex items-center">
+                                    <CiClock2 className="text-2xl text-red-500" />
+                                    Booked Slots:
+                                </p>
+                                <ul className="mt-1 space-y-1">
+                                    {Object.entries(user.slots).map(([time, company], index) => (
+                                        <li key={index} className="text-gray-700">
+                                            - {time} by <span className="font-medium">{company}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
                 </div>
                 <button
                     onClick={() => setShowBookingForm(!showBookingForm)}
-                    className="ml-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+                    className={`ml-4 px-4 py-2 rounded text-white transition-colors ${Object.keys(user.slots || {}).length >= timeSlots.length
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-blue-500 hover:bg-blue-600"
+                        }`}
+                    disabled={Object.keys(user.slots || {}).length >= timeSlots.length}
                 >
                     {showBookingForm ? "✕ Close" : "📅 Book Slot"}
                 </button>
@@ -96,7 +130,7 @@ const UserCard = ({ user, searchQuery, selectedByOptions, timeSlots }) => {
                                         onChange={() => handleCompanyChange(company)}
                                         className="form-radio h-4 w-4 text-blue-500"
                                     />
-                                    <span>{company}</span>
+                                    <span>{company} {selectedCompany === company && "✅"}</span>
                                 </label>
                             ))}
                         </div>
@@ -112,11 +146,13 @@ const UserCard = ({ user, searchQuery, selectedByOptions, timeSlots }) => {
                             required
                         >
                             <option value="">Select a time slot</option>
-                            {timeSlots.map((time) => (
-                                <option key={time} value={time}>
-                                    {time}
-                                </option>
-                            ))}
+                            {timeSlots
+                                .filter((time) => !user.slots || !user.slots[time])
+                                .map((time) => (
+                                    <option key={time} value={time}>
+                                        {time} {user.slots?.[time] && " - Booked ❌"}
+                                    </option>
+                                ))}
                         </select>
                     </div>
 

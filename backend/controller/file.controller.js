@@ -154,3 +154,27 @@ export const deleteSlot = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+export const getCompanyData = async (req, res) => {
+  try {
+    const companyName = req.params.companyName.toLowerCase();
+    // companyName.toLowerCase();
+    console.log("Searching for company:", companyName);
+
+    // Fetch all users who have the 'slots' field (ignore those without slots)
+    const users = await UserCollection.find({ slots: { $exists: true } });
+
+    // Filter users whose slots map contains the companyName
+    const filteredUsers = users.filter((user) =>
+      Array.from(user.slots.values()).includes(companyName)
+    );
+
+    console.log("Found users:", filteredUsers);
+
+    // Return the filtered users as a response
+    res.json(filteredUsers);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Error fetching users" });
+  }
+};

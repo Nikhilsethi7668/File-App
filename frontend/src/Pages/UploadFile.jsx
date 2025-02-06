@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import UserCard from "../Components/UserCard"; // Update import path as needed
+import UserCard from "../Components/UserCard";
 import UserContext from "../Context/UserContext";
 
 const FileUpload = () => {
@@ -53,8 +53,6 @@ const FileUpload = () => {
 
       const jsonData = await response.json();
       setUserData(jsonData.users); // Ensure this sets the context state
-      setData(jsonData.users || []);
-      console.log("Data fetched and set:", jsonData.users);
     } catch (error) {
       console.error("Error fetching data:", error);
       alert("Error fetching data: " + error.message);
@@ -67,20 +65,29 @@ const FileUpload = () => {
     fetchData();
   }, []);
 
+  // Sync userData with data state when userData updates (for live updates)
+  useEffect(() => {
+    if (userData.length) {
+      setData(userData);
+    }
+  }, [userData]);
+
   // Log userData when it changes
   useEffect(() => {
     console.log("User data updated in FileUpload:", userData);
   }, [userData]);
 
-  // Filter data based on search query
-  const filteredData = data.filter((user) => {
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      user.firstName?.toLowerCase().includes(searchLower) ||
-      user.lastName?.toLowerCase().includes(searchLower) ||
-      `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower)
-    );
-  });
+  // Filter data based on search query & Sort by the highest number of companies in `selectedBy`
+  const filteredData = data
+    .filter((user) => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        user.firstName?.toLowerCase().includes(searchLower) ||
+        user.lastName?.toLowerCase().includes(searchLower) ||
+        `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower)
+      );
+    })
+    .sort((a, b) => (b.selectedBy?.length || 0) - (a.selectedBy?.length || 0)); // Sort by selectedBy count
 
   // Generate time slots from 10:00 to 17:00
   const generateTimeSlots = () => {
