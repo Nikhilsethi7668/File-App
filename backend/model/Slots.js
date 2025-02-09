@@ -1,10 +1,27 @@
 import mongoose from "mongoose";
 
-const slotSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  company: String,
-  timeSlot: String,
-  status: { type: ["available", "booked"], default: "available" }, // available or booked
-});
+const slotSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserCollection",
+      required: true,
+    },
+    company: {
+      type: String,
+      required: true,
+    },
+    timeSlot: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["available", "booked"],
+      default: "available",
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model("Slot", slotSchema);
+export const Slots = mongoose.model("Slot", slotSchema);

@@ -1,5 +1,6 @@
 import xlsx from "xlsx";
 import { UserCollection } from "../model/filedata.model.js";
+import { Slots } from "../model/Slots.js";
 
 export const uploadFile = async (req, res) => {
   try {
@@ -91,6 +92,7 @@ export const uploadFile = async (req, res) => {
     if (processedData.length > 0) {
       // Clear existing data and insert fresh data
       await UserCollection.deleteMany({}); // Remove all existing documents
+      await Slots.deleteMany({});
       await UserCollection.insertMany(processedData); // Insert new documents
     } else {
       return res.status(400).json({ error: "No valid data to insert" });

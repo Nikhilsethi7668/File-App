@@ -10,7 +10,7 @@ const UserSchema = new mongoose.Schema(
     email: String,
     phone: String,
     selectedBy: [String],
-    slots: { type: Map, of: String },
+    // Removed slots field
   },
   { timestamps: true }
 );
