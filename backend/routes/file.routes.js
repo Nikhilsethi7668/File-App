@@ -2,7 +2,7 @@ import express from "express";
 import {
   uploadFile,
   getFileData,
-  getCompanyData,
+  // getCompanyData,
 } from "../controller/file.controller.js";
 import multer from "multer";
 
@@ -14,6 +14,6 @@ router.post("/upload-file", upload.single("file"), uploadFile);
 
 // Get file data route
 router.get("/get-filedata", getFileData);
-router.get(`/company/:companyName`, getCompanyData);
+// router.get(`/company/:companyName`, getCompanyData);`
 
 export default router;

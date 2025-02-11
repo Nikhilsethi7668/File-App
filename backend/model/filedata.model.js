@@ -10,7 +10,10 @@ const UserSchema = new mongoose.Schema(
     email: String,
     phone: String,
     selectedBy: [String],
-    // Removed slots field
+    giftCollected: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

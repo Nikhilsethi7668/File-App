@@ -27,6 +27,7 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
 
     const handleCompanyChange = (company) => {
         setSelectedCompany(company);
+        console.log(company);
     };
 
     const handleSubmit = async (e) => {
@@ -40,25 +41,18 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
         try {
             const data = {
                 userId: user._id,
-                slotTime: selectedTime,
+                timeSlot: selectedTime,
                 company: selectedCompany,
             };
 
-            const response = await Axios.post(`/booking-slot/${user._id}`, data, {
+            const response = await Axios.post(`/booking-slot`, data, {
                 headers: { "Content-Type": "application/json" }
+
             });
-
-            // Update the user state to reflect the new booking
-            setUser(prevUser => ({
-                ...prevUser,
-                slots: {
-                    ...prevUser.slots,
-                    [selectedTime]: selectedCompany
-                }
-            }));
-
-            alert("Slot booked successfully!");
+            console.log(response);
+            alert(response.data.message);
             setShowBookingForm(false);
+
         } catch (error) {
             console.error("Error booking slot:", error);
             alert(error.response?.data?.message || "An error occurred while booking. Please try again.");

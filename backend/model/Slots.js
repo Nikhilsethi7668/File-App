@@ -15,10 +15,9 @@ const slotSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    status: {
-      type: String,
-      enum: ["available", "booked"],
-      default: "available",
+    completed: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

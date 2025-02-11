@@ -21,12 +21,29 @@ const Meeting = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const response = await fetch("http://localhost:4000/api/files/get-filedata");
-            if (!response.ok) throw new Error("Failed to fetch data");
+            // Fetch users first
+            const userResponse = await fetch("http://localhost:4000/api/files/get-filedata");
+            if (!userResponse) throw new Error("Failed to fetch user data");
+            const userData = await userResponse.json();
 
-            const jsonData = await response.json();
-            setUserData(jsonData.users);
-            setFilteredUsers(jsonData.users || []);
+            // Fetch all booked slots
+            const slotsResponse = await fetch("http://localhost:4000/api/slot/get-all-booked-slots");
+            if (!slotsResponse.ok) throw new Error("Failed to fetch slots");
+            const slotsData = await slotsResponse.json();
+
+            // Map slots to users
+            const usersWithSlots = userData.users.map(user => {
+                const userSlots = {};
+                slotsData.forEach(slot => {
+                    if (slot.userId === user._id) {
+                        userSlots[slot.timeSlot] = slot.company;
+                    }
+                });
+                return { ...user, slots: userSlots };
+            });
+
+            setUserData(usersWithSlots);
+            setFilteredUsers(usersWithSlots || []);
         } catch (error) {
             console.error("Error fetching data:", error);
             alert("Error fetching data: " + error.message);
@@ -37,8 +54,15 @@ const Meeting = () => {
 
     // Delete a slot
     const deleteSlot = async (userId, slotTime) => {
+        // Ask for confirmation before deleting
+        const isConfirmed = window.confirm("Are you sure you want to delete this slot?");
+
+        if (!isConfirmed) {
+            return; // Exit if user cancels
+        }
+
         try {
-            const response = await fetch(`http://localhost:4000/api/files/delete-slot/${userId}`, {
+            const response = await fetch(`http://localhost:4000/api/slot/delete/${userId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -48,6 +72,7 @@ const Meeting = () => {
 
             if (!response.ok) throw new Error("Failed to delete slot");
 
+            // Update local state after successful deletion
             setUserData(prevData =>
                 prevData.map(user => {
                     if (user._id === userId) {

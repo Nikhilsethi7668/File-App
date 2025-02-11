@@ -125,58 +125,58 @@ export const getFileData = async (req, res) => {
 };
 // import { UserCollection } from "../model/filedata.model.js";
 
-export const deleteSlot = async (req, res) => {
-  try {
-    const userId = req.params.id;
-    console.log("user id is", userId);
-    const { slotTime } = req.body;
-    console.log(slotTime);
+// export const deleteSlot = async (req, res) => {
+//   try {
+//     const userId = req.params.id;
+//     console.log("user id is", userId);
+//     const { slotTime } = req.body;
+//     console.log(slotTime);
 
-    if (!userId || !slotTime) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+//     if (!userId || !slotTime) {
+//       return res.status(400).json({ error: "Missing required fields" });
+//     }
 
-    const user = await UserCollection.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+//     const user = await UserCollection.findById(userId);
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
 
-    console.log(user.slots);
-    console.log(user.slots.get(slotTime));
+//     console.log(user.slots);
+//     console.log(user.slots.get(slotTime));
 
-    if (user.slots && user.slots.get(slotTime)) {
-      user.slots.delete(slotTime); // Use the delete method to remove the slot
-      await user.save();
-      return res.status(200).json({ message: "Slot deleted successfully" });
-    } else {
-      return res.status(404).json({ error: "Slot not found" });
-    }
-  } catch (error) {
-    console.error("Error deleting slot:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-};
+//     if (user.slots && user.slots.get(slotTime)) {
+//       user.slots.delete(slotTime); // Use the delete method to remove the slot
+//       await user.save();
+//       return res.status(200).json({ message: "Slot deleted successfully" });
+//     } else {
+//       return res.status(404).json({ error: "Slot not found" });
+//     }
+//   } catch (error) {
+//     console.error("Error deleting slot:", error);
+//     return res.status(500).json({ error: "Internal Server Error" });
+//   }
+// };
 
-export const getCompanyData = async (req, res) => {
-  try {
-    const companyName = req.params.companyName.toLowerCase();
-    // companyName.toLowerCase();
-    console.log("Searching for company:", companyName);
+// export const getCompanyData = async (req, res) => {
+//   try {
+//     const companyName = req.params.companyName.toLowerCase();
+//     // companyName.toLowerCase();
+//     console.log("Searching for company:", companyName);
 
-    // Fetch all users who have the 'slots' field (ignore those without slots)
-    const users = await UserCollection.find({ slots: { $exists: true } });
+//     // Fetch all users who have the 'slots' field (ignore those without slots)
+//     const users = await UserCollection.find({ slots: { $exists: true } });
 
-    // Filter users whose slots map contains the companyName
-    const filteredUsers = users.filter((user) =>
-      Array.from(user.slots.values()).includes(companyName)
-    );
+//     // Filter users whose slots map contains the companyName
+//     const filteredUsers = users.filter((user) =>
+//       Array.from(user.slots.values()).includes(companyName)
+//     );
 
-    console.log("Found users:", filteredUsers);
+//     console.log("Found users:", filteredUsers);
 
-    // Return the filtered users as a response
-    res.json(filteredUsers);
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({ message: "Error fetching users" });
-  }
-};
+//     // Return the filtered users as a response
+//     res.json(filteredUsers);
+//   } catch (error) {
+//     console.error("Error fetching users:", error);
+//     res.status(500).json({ message: "Error fetching users" });
+//   }
+// };
