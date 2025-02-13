@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Axios from "../Api/Axios";
 import { CiClock2 } from "react-icons/ci";
+import SlotsContext from "../Context/SlotsContext.jsx";
 
-const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots }) => {
+const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots = [] }) => {
     const [user, setUser] = useState(initialUser);
     const [showBookingForm, setShowBookingForm] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState("");
     const [selectedTime, setSelectedTime] = useState("");
+    const { slots, fetchSlots } = useContext(SlotsContext); // Use the context
 
     useEffect(() => {
         setUser(initialUser);
@@ -47,8 +49,8 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
 
             const response = await Axios.post(`/booking-slot`, data, {
                 headers: { "Content-Type": "application/json" }
-
             });
+            await fetchSlots(); // Refresh slots after booking
             console.log(response);
             alert(response.data.message);
             setShowBookingForm(false);
@@ -57,6 +59,14 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
             console.error("Error booking slot:", error);
             alert(error.response?.data?.message || "An error occurred while booking. Please try again.");
         }
+    };
+
+    // Filter slots for the current user
+    const userBookedSlots = slots.filter(slot => slot.userId === user._id);
+
+    // Check if a time slot is booked
+    const isTimeSlotBooked = (time) => {
+        return userBookedSlots.some(slot => slot.timeSlot === time);
     };
 
     return (
@@ -76,16 +86,16 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
                             🏷 Selected by: {user.selectedBy?.map(highlightMatch).join(", ") || "N/A"}
                         </p>
                         {/* Display Booked Slots */}
-                        {user.slots && Object.keys(user.slots).length > 0 && (
+                        {userBookedSlots.length > 0 && (
                             <div className="mt-2 p-2 border rounded bg-gray-50 text-sm">
                                 <p className="font-medium flex items-center">
                                     <CiClock2 className="text-2xl text-red-500" />
                                     Booked Slots:
                                 </p>
                                 <ul className="mt-1 space-y-1">
-                                    {Object.entries(user.slots).map(([time, company], index) => (
+                                    {userBookedSlots.map((slot, index) => (
                                         <li key={index} className="text-gray-700">
-                                            - {time} by <span className="font-medium">{company}</span>
+                                            - {slot.timeSlot} by <span className="font-medium">{slot.company}</span>
                                         </li>
                                     ))}
                                 </ul>
@@ -140,13 +150,16 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
                             required
                         >
                             <option value="">Select a time slot</option>
-                            {timeSlots
-                                .filter((time) => !user.slots || !user.slots[time])
-                                .map((time) => (
-                                    <option key={time} value={time}>
-                                        {time} {user.slots?.[time] && " - Booked ❌"}
-                                    </option>
-                                ))}
+                            {timeSlots.map((time) => (
+                                <option
+                                    key={time}
+                                    value={time}
+                                    disabled={isTimeSlotBooked(time)} // Disable booked slots
+                                    className={isTimeSlotBooked(time) ? "text-red-500" : ""}
+                                >
+                                    {time} {isTimeSlotBooked(time) && <span className="text-red-500">(Booked {userBookedSlots.find(slot => slot.timeSlot === time)?.company} ❌)</span>}
+                                </option>
+                            ))}
                         </select>
                     </div>
 

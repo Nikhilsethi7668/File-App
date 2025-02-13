@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import UserCard from "../Components/UserCard";
 import UserContext from "../Context/UserContext";
-
+import SlotsContext from "../Context/SlotsContext";
 const FileUpload = () => {
   const [file, setFile] = useState(null);
   const [data, setData] = useState([]);
@@ -9,6 +9,8 @@ const FileUpload = () => {
   const [fetching, setFetching] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const { userData, setUserData } = useContext(UserContext);
+  const { slots, setSlots, fetchSlots } = useContext(SlotsContext)
+
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);

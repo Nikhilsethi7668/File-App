@@ -77,7 +77,7 @@ export const getAllBookedSlots = async (req, res) => {
     res.json(slots);
   } catch (error) {
     console.error("Error fetching all booked slots:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 

@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { BrowserRouter } from 'react-router'
-import { UserContextProvider } from './Context/UserContext'
-import { AuthProvider } from './Context/AuthContext'
+import { UserContextProvider } from './Context/UserContext.jsx'
+// import { AuthProvider } from './Context/AuthContext.jsx'
+import { SlotsContextProvider } from './Context/SlotsContext.jsx'
+import { AuthProvider } from './context/AuthContext.jsx'
 
 
 createRoot(document.getElementById('root')).render(
@@ -12,9 +14,11 @@ createRoot(document.getElementById('root')).render(
     <StrictMode>
       <AuthProvider>
         <UserContextProvider>
-          <App />
+          <SlotsContextProvider>
+            <App />
+          </SlotsContextProvider>
         </UserContextProvider>
       </AuthProvider>
     </StrictMode>,
-  </BrowserRouter>
+  </BrowserRouter >
 )
