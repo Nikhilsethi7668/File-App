@@ -16,7 +16,7 @@ const UserProvider = ({ children }) => {
         const verifyUser = async () => {
             setLoading(true);
             try {
-                const response = await checkAuth();
+                const response = await checkAuthService();
                 console.log("Response from checkAuth:", response);
                 if (response?.data?.authenticated) {
                     console.log("Authenticated user:", response.data.user);
@@ -51,6 +51,7 @@ const UserProvider = ({ children }) => {
             if (response.success) {
                 setUser(response.user);
                 setIsAuthenticated(true);
+                alert("Logged in successfully")
                 console.log("User logged in:", user);
                 return;
             }
@@ -76,6 +77,7 @@ const UserProvider = ({ children }) => {
             await logoutService();
             setUser(null);
             setIsAuthenticated(false);
+            alert("Logged out successfully")
             navigate("/"); // Redirect to login after logout
         } catch (error) {
             console.error("Logout failed:", error);

@@ -16,6 +16,7 @@ export const signup = async (email, password, userName) => {
 export const checkAuth = async () => {
   try {
     const response = await Axios.get("/auth/check-auth");
+    console.log("response from checkAuth", response);
     return response;
   } catch (error) {
     return error;

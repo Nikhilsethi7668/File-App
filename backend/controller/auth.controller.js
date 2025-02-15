@@ -240,7 +240,8 @@ export const checkAuth = async (req, res) => {
   if (!token) {
     return res.status(401).json({ authenticated: false });
   }
-  const decoded = jwt.verify(token, "SECRET_KEY_PLEXADUBAI");
+  console.log("token", token);
+  const decoded = jwt.verify(token, process.env.JWT_Token);
   const user = await User.findById(decoded.userId);
   if (!user) {
     return res.status(401).json({ authenticated: false });
