@@ -1,22 +1,21 @@
 import Axios from "../Api/Axios.jsx";
 
-export const signup = async (email, password, name, confirmPassword) => {
+export const signup = async (email, password, userName) => {
   try {
-    const response = await Axios.post("/signup", {
+    const response = await Axios.post("/auth/signup", {
       email,
       password,
-      name,
-      confirmPassword,
+      userName,
     });
-    return response.data;
+    return response;
   } catch (error) {
-    throw error.response?.data?.message || "Error Signing Up";
+    console.log(error);
   }
 };
 
 export const checkAuth = async () => {
   try {
-    const response = await Axios.get("/check-auth");
+    const response = await Axios.get("/auth/check-auth");
     return response.data;
   } catch (error) {
     return null;
@@ -25,7 +24,7 @@ export const checkAuth = async () => {
 
 export const login = async (email, password) => {
   try {
-    const response = await Axios.post("/login", { email, password });
+    const response = await Axios.post("/auth/login", { email, password });
     return response.data;
   } catch (error) {
     throw error.response?.data?.message || "Error logging in";
@@ -34,7 +33,7 @@ export const login = async (email, password) => {
 
 export const logout = async () => {
   try {
-    await Axios.post("/logout");
+    await Axios.post("/auth/logout");
   } catch (error) {
     throw "Error logging out";
   }

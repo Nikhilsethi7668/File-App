@@ -11,9 +11,7 @@ const UserProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
-    // const { businessDetails } = useContext(BusinessContext)
 
-    // Check if user is authenticated on app load
     useEffect(() => {
         const verifyUser = async () => {
             setLoading(true);
@@ -85,6 +83,7 @@ const UserProvider = ({ children }) => {
     const signup = async (userData) => {
         setLoading(true);
         try {
+            console.log("userData", userData);
             const response = await signupService(userData);
             setUser(response.data.user);
             // setIsAuthenticated(true);
@@ -99,7 +98,7 @@ const UserProvider = ({ children }) => {
     };
 
     return (
-        <UserContext.Provider value={{ user, isAuthenticated, loading, error, login, logout }}>
+        <UserContext.Provider value={{ user, signup, isAuthenticated, loading, error, login, logout }}>
             {children}
         </UserContext.Provider>
     );

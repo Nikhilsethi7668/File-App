@@ -2,14 +2,10 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    firstName: {
+    username: {
       type: String,
       required: true,
-    },
-
-    lastName: {
-      type: String,
-      required: true,
+      unique: true,
     },
     email: {
       type: String,
@@ -20,29 +16,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    confirmPassword: {
-      type: String,
-      required: true,
+    isAdmin: {
+      type: Boolean,
+      default: false,
     },
-
-    lastLogin: {
-      type: Date,
-      default: Date.now,
-    },
-    role: {
-      type: String,
-      enum: ["citizen", "admin"],
-      default: "citizen",
-    },
-
-    // isVerified: {
-    //   type: Boolean,
-    //   default: false,
-    // },
-    // resetPasswordToken: String,
-    // resetPasswordExpiresAt: Date,
-    // verificationToken: String,
-    // verificationTokenExpiresAt: Date,
   },
   { timestamps: true }
 );
