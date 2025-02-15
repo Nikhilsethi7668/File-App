@@ -15,13 +15,13 @@ import slotRoutes from "./routes/slot.routes.js";
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
-
 // CORS Configuration (Apply this before routes)
-// const corsOptions = {
-//   origin: "http://localhost:5173",
-//   credentials: true,
-// };
-app.use(cors()); // <-- Fix: Apply CORS Middleware Here
+const corsOptions = {
+  origin: "http://localhost:5173",
+  credentials: true,
+};
+
+app.use(cors(corsOptions)); // <-- Fix: Apply CORS Middleware Here
 
 // Middleware
 app.use(express.json());

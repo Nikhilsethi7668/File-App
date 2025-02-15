@@ -1,9 +1,10 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext'; // Assume you have an AuthContext for managing authentication
+import { UserContext } from '../Context/UserContext';
 
 const Navbar = () => {
-    const { isAuthenticated, login, logout } = useContext(AuthContext);
+    const { isAuthenticated, login, logout } = useContext(UserContext);
 
     return (
         <nav className="bg-blue-500 p-4 flex justify-between items-center">

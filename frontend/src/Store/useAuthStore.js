@@ -16,17 +16,19 @@ export const signup = async (email, password, userName) => {
 export const checkAuth = async () => {
   try {
     const response = await Axios.get("/auth/check-auth");
-    return response.data;
+    return response;
   } catch (error) {
-    return null;
+    return error;
   }
 };
 
 export const login = async (email, password) => {
   try {
     const response = await Axios.post("/auth/login", { email, password });
+    console.log("response", response);
     return response.data;
   } catch (error) {
+    console.log("error", error);
     throw error.response?.data?.message || "Error logging in";
   }
 };

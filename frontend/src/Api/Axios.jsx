@@ -3,8 +3,8 @@ import React from 'react'
 
 const Axios = axios.create({
     baseURL: "http://localhost:4000/api",
-    // withCredentials: true,
-    // timeout: 5000,
+    withCredentials: true,
+    timeout: 5000,
     headers: {
         "Content-Type": "application/json"
     }

@@ -5,6 +5,7 @@ export const protectRoute = async (req, res, next) => {
   let token;
 
   token = req.cookies.token;
+  console.log("Token from cookies:", token);
   // console.log("Token from cookies:", token);
 
   if (!token) {
@@ -14,6 +15,7 @@ export const protectRoute = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, "SECRET_KEY_PLEXADUBAI");
     console.log("Decoded Token:", decoded);
+    console.log("Token:", token);
 
     req.userId = decoded.userId;
     req.user = await User.findById(decoded.userId);
@@ -29,7 +31,6 @@ export const protectRoute = async (req, res, next) => {
     res.status(401).json({ message: "Token is not valid" });
   }
 };
-
 
 // Middleware to check if the user is an admin
 export const isAdmin = (req, res, next) => {

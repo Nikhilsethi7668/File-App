@@ -1,5 +1,6 @@
 import { User } from "../model/auth.model.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { generateTokenAndCookie } from "../utils/generateToken.js";
 //import { sendVerificationEmail } from "../mailtrap/email.js";
@@ -108,7 +109,10 @@ export const signup = async (req, res) => {
 // };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  console.log("login");
+  console.log(req.body);
+  const { email, password } = req.body.email;
+  console.log(email, password);
 
   try {
     const user = await User.findOne({ email });
@@ -125,6 +129,7 @@ export const login = async (req, res) => {
         message: "Invalid Credentials",
       });
     }
+    console.log("user", user);
 
     generateTokenAndCookie(res, user._id);
 
@@ -140,6 +145,7 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
+    console.log("error", error);
     res.status(400).json({
       success: false,
       message: `Login Failes : ${error}`,
@@ -234,7 +240,7 @@ export const checkAuth = async (req, res) => {
   if (!token) {
     return res.status(401).json({ authenticated: false });
   }
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const decoded = jwt.verify(token, "SECRET_KEY_PLEXADUBAI");
   const user = await User.findById(decoded.userId);
   if (!user) {
     return res.status(401).json({ authenticated: false });

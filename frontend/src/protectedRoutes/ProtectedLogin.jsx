@@ -6,6 +6,7 @@ import { Navigate } from "react-router-dom"
 const ProtectedLogin = ({ children }) => {
     const { user, isAuthenticated } = useContext(UserContext)
     if (!isAuthenticated) {
+        alert("Please login to continue")
         return <Navigate to="/login" replace />
     }
     return children
