@@ -32,13 +32,13 @@ export const protectRoute = async (req, res, next) => {
 
 
 // Middleware to check if the user is an admin
-// export const isAdmin = (req, res, next) => {
-//   // Check if the user is authenticated and has the "admin" role
-//   if (!req.user || !req.user.role.includes("admin")) {
-//     return res.status(403).json({ message: "Access denied. Admins only." });
-//   }
-//   next();
-// };
+export const isAdmin = (req, res, next) => {
+  // Check if the user is authenticated and has the "admin" role
+  if (!req.user || !req.user.role.includes("admin")) {
+    return res.status(403).json({ message: "Access denied. Admins only." });
+  }
+  next();
+};
 
 // export const isCitizen = (req, res, next) => {
 //   // Check if the user is authenticated and has the "admin" role
