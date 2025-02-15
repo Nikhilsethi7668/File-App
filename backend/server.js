@@ -32,6 +32,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api", slotRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);

@@ -5,6 +5,7 @@ import HomeLayout from "./Layout/HomeLayout.jsx";
 import Dashboard from "./Pages/Dashboard.jsx";
 import Meeting from "./Pages/Meeting.jsx";
 import Company from "./Pages/Company.jsx";
+import SignIn from "./Pages/SignIn.jsx.jsx";
 
 function App() {
   return (
@@ -14,7 +15,9 @@ function App() {
         <Route index element={<Dashboard />} /> {/* Default route */}
         <Route path="meeting" element={<Meeting />} />
         <Route path="/company" element={<Company />} />
+
       </Route>
+      <Route path="/login" element={<SignIn />} />
     </Routes>
   );
 }

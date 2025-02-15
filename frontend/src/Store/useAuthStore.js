@@ -14,15 +14,6 @@ export const signup = async (email, password, name, confirmPassword) => {
   }
 };
 
-export const verifyEmail = async (code) => {
-  try {
-    const response = await Axios.post("/verify-email", { code });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data?.message || "Error in Verifying Email";
-  }
-};
-
 export const checkAuth = async () => {
   try {
     const response = await Axios.get("/check-auth");
@@ -46,23 +37,5 @@ export const logout = async () => {
     await Axios.post("/logout");
   } catch (error) {
     throw "Error logging out";
-  }
-};
-
-export const forgotPassword = async (email) => {
-  try {
-    const response = await Axios.post("/forgot-password", { email });
-    return response.data.message;
-  } catch (error) {
-    throw error.response?.data?.message || "Error sending reset password email";
-  }
-};
-
-export const resetPassword = async (token, password) => {
-  try {
-    const response = await Axios.post(`/reset-password/${token}`, { password });
-    return response.data.message;
-  } catch (error) {
-    throw error.response?.data?.message || "Error resetting password";
   }
 };
