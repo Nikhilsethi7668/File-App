@@ -1,15 +1,13 @@
 import Axios from "../Api/Axios.jsx";
 
-export const signup = async (email, password, userName) => {
+export const signup = async (data) => {
   try {
-    const response = await Axios.post("/auth/signup", {
-      email,
-      password,
-      userName,
-    });
+    const response = await Axios.post("/auth/signup", data);
+    // console.log("response from signup", response);
     return response;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 

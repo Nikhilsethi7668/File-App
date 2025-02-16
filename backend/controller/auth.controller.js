@@ -10,8 +10,9 @@ import { generateTokenAndCookie } from "../utils/generateToken.js";
 
 export const signup = async (req, res) => {
   console.log(req.body);
-  const { userName, email, password } = req.body.email;
-  console.log(userName, email, password);
+
+  const { userName, email, password, isAdmin } = req.body;
+  console.log(userName, email, password, isAdmin);
 
   try {
     if (!userName || !email || !password) {
@@ -26,7 +27,9 @@ export const signup = async (req, res) => {
         message: "User already exist with this email",
       });
     }
-    const userAlreadyExistsbyUsername = await User.findOne({ userName });
+    const userAlreadyExistsbyUsername = await User.findOne({
+      username: userName,
+    });
 
     if (userAlreadyExistsbyUsername) {
       return res.status(400).json({
@@ -43,6 +46,7 @@ export const signup = async (req, res) => {
       username,
       email,
       password: hashedPassword,
+      isAdmin,
       // verificationToken,
       // verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     });

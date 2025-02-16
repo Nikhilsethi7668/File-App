@@ -1,14 +1,19 @@
-import { useState } from "react";
-import React from "react";
+import React, { useContext, useState, useEffect } from "react";
+import { DataContext } from "../Context/DataContext";
 
 const Company = () => {
-    const companies = ["Vmware", "Outsystems", "rackspace/google", "AWS WL"];
+    const { fileUserData, getUniqueCompanies } = useContext(DataContext);
     const [users, setUsers] = useState([]);
     const [selectedCompany, setSelectedCompany] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [updatingId, setUpdatingId] = useState(null);
     const [error, setError] = useState(null);
     const [count, setCount] = useState(0);
+    const [companies, setCompanies] = useState([]);
+
+    useEffect(() => {
+        setCompanies(getUniqueCompanies());
+    }, [fileUserData]);
 
     const fetchUsers = async (companyName) => {
         const encodedCompanyName = encodeURIComponent(companyName);
@@ -68,19 +73,25 @@ const Company = () => {
         <div className="max-w-5xl mx-auto px-4 py-8 min-h-screen bg-gray-50">
             <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">Select a Company</h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
-                {companies.map((company) => (
-                    <button
-                        key={company}
-                        onClick={() => fetchUsers(company)}
-                        className={`p-3 rounded-lg text-lg font-medium transition-all duration-300 text-center w-full 
-                            ${selectedCompany === company ? "bg-blue-600 text-white scale-105 shadow-lg" : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 shadow-md"}
-                        `}
-                    >
-                        {company}
-                    </button>
-                ))}
-            </div>
+            {companies.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
+                    {companies.map((company) => (
+                        <button
+                            key={company}
+                            onClick={() => fetchUsers(company)}
+                            className={`p-3 rounded-lg text-lg font-medium transition-all duration-300 text-center w-full 
+                                ${selectedCompany === company ? "bg-blue-600 text-white scale-105 shadow-lg" : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 shadow-md"}
+                            `}
+                        >
+                            {company}
+                        </button>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center text-gray-500">
+                    Please upload file first
+                </div>
+            )}
 
             <div className="space-y-6">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">

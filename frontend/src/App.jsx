@@ -8,6 +8,7 @@ import Company from "./Pages/Company.jsx";
 import SignIn from "./Pages/SignIn.jsx";
 import SignUp from "./Pages/Signup.jsx";
 import ProtectedLogin from "./protectedRoutes/ProtectedLogin.jsx";
+import ProtectedAdmin from "./protectedRoutes/Admin.jsx";
 
 function App() {
   return (
@@ -15,8 +16,13 @@ function App() {
       {/* Public routes (no protection) */}
       <Route path="/" element={<HomeLayout />}>
         <Route path="login" element={<SignIn />} />
-        <Route path="signup" element={<SignUp />} />
+
+        <Route path="signup" element={<ProtectedAdmin>
+          <SignUp />
+        </ProtectedAdmin>} />
       </Route>
+
+
 
       {/* Protected routes */}
       <Route

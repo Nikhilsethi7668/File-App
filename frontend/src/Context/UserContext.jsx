@@ -97,7 +97,7 @@ const UserProvider = ({ children }) => {
             // setIsAuthenticated(true);
             alert("Signed up successfully")
         } catch (error) {
-            console.error("Signup failed:", error);
+            console.error("Signup failed:", error.message);
             setError("Signup failed. Please try again.");
             throw error;
         } finally {

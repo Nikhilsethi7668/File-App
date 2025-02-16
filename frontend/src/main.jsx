@@ -13,16 +13,16 @@ import { DataContextProvider } from './Context/DataContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
-    <StrictMode>
 
-      <UserProvider>
-        <DataContextProvider>
-          <SlotsContextProvider>
-            <App />
-          </SlotsContextProvider>
-        </DataContextProvider>
-      </UserProvider>
 
-    </StrictMode>,
+    <UserProvider>
+      <DataContextProvider>
+        <SlotsContextProvider>
+          <App />
+        </SlotsContextProvider>
+      </DataContextProvider>
+    </UserProvider>
+
+
   </BrowserRouter >
 )
