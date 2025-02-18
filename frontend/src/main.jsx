@@ -6,19 +6,23 @@ import { BrowserRouter } from 'react-router'
 import UserProvider from './Context/UserContext.jsx'
 // import { AuthProvider } from './Context/AuthContext.jsx'
 import { SlotsContextProvider } from './Context/SlotsContext.jsx'
-import { AuthProvider } from './context/AuthContext.jsx'
+import { DataContextProvider } from './Context/DataContext.jsx'
+// import { AuthProvider } from './context/AuthContext.jsx'
+
 
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
-    <StrictMode>
-      <AuthProvider>
-        <UserProvider>
-          <SlotsContextProvider>
-            <App />
-          </SlotsContextProvider>
-        </UserProvider>
-      </AuthProvider>
-    </StrictMode>,
+
+
+    <UserProvider>
+      <DataContextProvider>
+        <SlotsContextProvider>
+          <App />
+        </SlotsContextProvider>
+      </DataContextProvider>
+    </UserProvider>
+
+
   </BrowserRouter >
 )

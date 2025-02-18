@@ -2,15 +2,16 @@ import React, { useState, useEffect, useContext } from "react";
 import UserCard from "../Components/UserCard";
 import UserContext from "../Context/UserContext";
 import SlotsContext from "../Context/SlotsContext";
+import DataContext from "../Context/DataContext";
+
 const FileUpload = () => {
   const [file, setFile] = useState(null);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const { userData, setUserData } = useContext(UserContext);
-  const { slots, setSlots, fetchSlots } = useContext(SlotsContext)
-
+  const { fileUserData, setFileUserData } = useContext(DataContext);
+  const { slots, setSlots, fetchSlots } = useContext(SlotsContext);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -54,7 +55,7 @@ const FileUpload = () => {
       if (!response.ok) throw new Error("Failed to fetch data");
 
       const jsonData = await response.json();
-      setUserData(jsonData.users); // Ensure this sets the context state
+      setFileUserData(jsonData.users || []); // Ensure this sets the context state
     } catch (error) {
       console.error("Error fetching data:", error);
       alert("Error fetching data: " + error.message);
@@ -69,18 +70,18 @@ const FileUpload = () => {
 
   // Sync userData with data state when userData updates (for live updates)
   useEffect(() => {
-    if (userData.length) {
-      setData(userData);
+    if (fileUserData && Array.isArray(fileUserData)) {
+      setData(fileUserData);
     }
-  }, [userData]);
+  }, [fileUserData]);
 
   // Log userData when it changes
   useEffect(() => {
-    console.log("User data updated in FileUpload:", userData);
-  }, [userData]);
+    console.log("User data updated in FileUpload:", fileUserData);
+  }, [fileUserData]);
 
   // Filter data based on search query & Sort by the highest number of companies in `selectedBy`
-  const filteredData = data
+  const filteredData = (data || [])
     .filter((user) => {
       const searchLower = searchQuery.toLowerCase();
       return (
@@ -89,7 +90,7 @@ const FileUpload = () => {
         `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower)
       );
     })
-    .sort((a, b) => (b.selectedBy?.length || 0) - (a.selectedBy?.length || 0)); // Sort by selectedBy count
+    .sort((a, b) => (b.selectedBy?.length || 0) - (a.selectedBy?.length || 0));
 
   // Generate time slots from 10:00 to 17:00
   const generateTimeSlots = () => {
@@ -103,7 +104,7 @@ const FileUpload = () => {
 
   // Get unique selectedBy options from all users
   const getSelectedByOptions = () => {
-    const allOptions = data.flatMap((user) => user.selectedBy || []);
+    const allOptions = (data || []).flatMap((user) => user.selectedBy || []);
     return [...new Set(allOptions)];
   };
 

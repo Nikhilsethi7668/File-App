@@ -1,5 +1,6 @@
 import { User } from "../model/auth.model.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { generateTokenAndCookie } from "../utils/generateToken.js";
 //import { sendVerificationEmail } from "../mailtrap/email.js";
@@ -8,46 +9,48 @@ import { generateTokenAndCookie } from "../utils/generateToken.js";
 // import { sendResetSuccessEmail } from "../mailtrap/email.js";
 
 export const signup = async (req, res) => {
-  const { firstName, lastName, email, password, confirmPassword } =
-    req.body;
+  console.log(req.body);
+
+  const { userName, email, password, isAdmin } = req.body;
+  console.log(userName, email, password, isAdmin);
 
   try {
-    if (
-      !firstName ||
-      !lastName ||
-      !email ||
-      !password ||
-      !confirmPassword
-    ) {
+    if (!userName || !email || !password) {
       throw new Error("All fields are required");
     }
 
     const userAlreadyExists = await User.findOne({ email });
 
     if (userAlreadyExists) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User already exists" });
+      return res.status(400).json({
+        success: false,
+        message: "User already exist with this email",
+      });
     }
+    const userAlreadyExistsbyUsername = await User.findOne({
+      username: userName,
+    });
 
-    if (password !== confirmPassword) {
-      throw new Error("Passwords do not match.");
+    if (userAlreadyExistsbyUsername) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists with this username",
+      });
     }
+    const username = userName;
+
+    console.log("password", password);
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const verificationToken = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
-
     const user = new User({
-      firstName,
-      lastName,
+      username,
       email,
       password: hashedPassword,
-      confirmPassword: hashedPassword,
+      isAdmin,
       // verificationToken,
       // verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     });
+    console.log("user", user);
 
     await user.save();
 
@@ -65,6 +68,7 @@ export const signup = async (req, res) => {
       },
     });
   } catch (error) {
+    console.log("error", error);
     res.status(400).json({ success: false, message: error.message });
   }
 };
@@ -109,7 +113,10 @@ export const signup = async (req, res) => {
 // };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  console.log("login");
+  console.log(req.body);
+  const { email, password } = req.body.email;
+  console.log(email, password);
 
   try {
     const user = await User.findOne({ email });
@@ -126,6 +133,7 @@ export const login = async (req, res) => {
         message: "Invalid Credentials",
       });
     }
+    console.log("user", user);
 
     generateTokenAndCookie(res, user._id);
 
@@ -141,6 +149,7 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
+    console.log("error", error);
     res.status(400).json({
       success: false,
       message: `Login Failes : ${error}`,
@@ -230,3 +239,16 @@ export const logout = async (req, res) => {
 //     });
 //   }
 // };
+export const checkAuth = async (req, res) => {
+  const { token } = req.cookies;
+  if (!token) {
+    return res.status(401).json({ authenticated: false });
+  }
+  console.log("token", token);
+  const decoded = jwt.verify(token, process.env.JWT_Token);
+  const user = await User.findById(decoded.userId);
+  if (!user) {
+    return res.status(401).json({ authenticated: false });
+  }
+  return res.status(200).json({ authenticated: true, user });
+};

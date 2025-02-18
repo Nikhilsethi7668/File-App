@@ -104,15 +104,16 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
                     </div>
                 </div>
                 <button
-                    onClick={() => setShowBookingForm(!showBookingForm)}
-                    className={`ml-4 px-4 py-2 rounded text-white transition-colors ${Object.keys(user.slots || {}).length >= timeSlots.length
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-blue-500 hover:bg-blue-600"
-                        }`}
-                    disabled={Object.keys(user.slots || {}).length >= timeSlots.length}
-                >
-                    {showBookingForm ? "✕ Close" : "📅 Book Slot"}
-                </button>
+  onClick={() => setShowBookingForm(!showBookingForm)}
+  className={`ml-4 px-4 py-2 rounded text-white transition-colors ${
+    userBookedSlots.length >= timeSlots.length
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-blue-500 hover:bg-blue-600"
+  }`}
+  disabled={userBookedSlots.length >= timeSlots.length}
+>
+  {showBookingForm ? "✕ Close" : "📅 Book Slot"}
+</button>
             </div>
 
             {showBookingForm && (

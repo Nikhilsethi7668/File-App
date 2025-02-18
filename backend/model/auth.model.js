@@ -2,14 +2,10 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    firstName: {
+    username: {
       type: String,
       required: true,
-    },
-
-    lastName: {
-      type: String,
-      required: true,
+      unique: true,
     },
     email: {
       type: String,
@@ -20,10 +16,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    confirmPassword: {
-      type: String,
-      required: true,
+    isAdmin: {
+      type: Boolean,
+      default: false,
     },
+<<<<<<< HEAD
 
     lastLogin: {
       type: Date,
@@ -44,6 +41,8 @@ const userSchema = new mongoose.Schema(
     // resetPasswordExpiresAt: Date,
     // verificationToken: String,
     // verificationTokenExpiresAt: Date,
+=======
+>>>>>>> fed14840f9f5f95e61e956d260c59e7fc589b4ff
   },
   { timestamps: true }
 );

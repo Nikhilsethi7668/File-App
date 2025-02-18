@@ -39,7 +39,7 @@ export const uploadFile = async (req, res) => {
       phone: "phone",
     };
 
-    const selectionValues = new Set(["1", "1 ptr", "1 corp", "1 str"]);
+    const selectionValues = new Set(["1ptr", "1corp", "1str"]);
 
     // Identify column indexes based on mapping
     const fieldIndexes = {};
