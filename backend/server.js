@@ -14,10 +14,10 @@ import slotRoutes from "./routes/slot.routes.js";
 
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 8493;
 // CORS Configuration (Apply this before routes)
 const corsOptions = {
-  origin: "http://localhost:5173",
+  origin: "https://file-app-frontend.amiigo.in",
   credentials: true,
 };
 
