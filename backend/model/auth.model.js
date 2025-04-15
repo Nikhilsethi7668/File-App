@@ -20,7 +20,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-<<<<<<< HEAD
 
     lastLogin: {
       type: Date,
@@ -41,8 +40,6 @@ const userSchema = new mongoose.Schema(
     // resetPasswordExpiresAt: Date,
     // verificationToken: String,
     // verificationTokenExpiresAt: Date,
-=======
->>>>>>> fed14840f9f5f95e61e956d260c59e7fc589b4ff
   },
   { timestamps: true }
 );
