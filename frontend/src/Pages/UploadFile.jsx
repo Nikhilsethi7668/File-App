@@ -51,7 +51,7 @@ const FileUpload = () => {
   const fetchData = async () => {
     setFetching(true);
     try {
-      const response = await fetch("http://localhost:4000/api/files/get-filedata");
+      const response = await fetch("https://file-app-api.amiigo.in/api/files/get-filedata");
       if (!response.ok) throw new Error("Failed to fetch data");
 
       const jsonData = await response.json();
