@@ -28,7 +28,7 @@ const FileUpload = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:4000/api/files/upload-file", {
+      const response = await fetch("https://file-app-api.amiigo.in/api/files/upload-file", {
         method: "POST",
         body: formData,
       });
