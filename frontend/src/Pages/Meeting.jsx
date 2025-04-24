@@ -20,7 +20,7 @@ const Meeting = () => {
         setLoading(true);
         try {
             const userResponse = await fetch(
-                "http://localhost:4000/api/files/get-filedata"
+                "https://file-app-api.amiigo.in/api/files/get-filedata"
             );
             if (!userResponse.ok) throw new Error("Failed to fetch user data");
             const userData = await userResponse.json();
