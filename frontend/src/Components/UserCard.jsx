@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import Axios from "../Api/Axios";
-import { CiClock2 } from "react-icons/ci";
+import { CiClock2, CiCalendar, CiUser, CiMail, CiPhone } from "react-icons/ci";
+import { FiBriefcase, FiTag, FiX, FiCheck } from "react-icons/fi";
 import SlotsContext from "../Context/SlotsContext.jsx";
 
 const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots = [] }) => {
@@ -8,7 +9,8 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
     const [showBookingForm, setShowBookingForm] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState("");
     const [selectedTime, setSelectedTime] = useState("");
-    const { slots, fetchSlots } = useContext(SlotsContext); // Use the context
+    const { slots, fetchSlots } = useContext(SlotsContext);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         setUser(initialUser);
@@ -20,7 +22,7 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
         const regex = new RegExp(`(${searchQuery})`, "gi");
         return text.toString().split(regex).map((part, i) =>
             i % 2 === 1 ? (
-                <mark key={i} className="bg-yellow-200">{part}</mark>
+                <mark key={i} className="bg-yellow-100 text-yellow-800 px-1 rounded">{part}</mark>
             ) : (
                 part
             )
@@ -29,14 +31,15 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
 
     const handleCompanyChange = (company) => {
         setSelectedCompany(company);
-        console.log(company);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
 
         if (!selectedTime || !selectedCompany) {
             alert("Please select a company and a time slot.");
+            setIsSubmitting(false);
             return;
         }
 
@@ -50,14 +53,14 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
             const response = await Axios.post(`/booking-slot`, data, {
                 headers: { "Content-Type": "application/json" }
             });
-            await fetchSlots(); // Refresh slots after booking
-            console.log(response);
+            await fetchSlots();
             alert(response.data.message);
             setShowBookingForm(false);
-
         } catch (error) {
             console.error("Error booking slot:", error);
             alert(error.response?.data?.message || "An error occurred while booking. Please try again.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -69,119 +72,210 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
         return userBookedSlots.some(slot => slot.timeSlot === time);
     };
 
+    // Calculate available slots
+    const availableSlots = timeSlots.length - userBookedSlots.length;
+
     return (
-        <div className="border rounded-lg p-4 mb-4 shadow-sm bg-white transition-all duration-200 hover:shadow-md">
-            <div className="flex justify-between items-start">
+        <div className="border border-gray-200 rounded-xl p-6 mb-6 shadow-sm bg-white transition-all duration-200 hover:shadow-lg group">
+            <div className="flex flex-col md:flex-row gap-6">
+                {/* User Info Section */}
                 <div className="flex-1">
-                    <h3 className="text-lg font-semibold">
-                        {highlightMatch(user.firstName)} {highlightMatch(user.lastName)}
-                    </h3>
-                    <p className="text-gray-600">
-                        {highlightMatch(user.title)} at {highlightMatch(user.company)}
-                    </p>
-                    <div className="mt-2 space-y-1 text-sm">
-                        <p>📧 {highlightMatch(user.email)}</p>
-                        <p>📱 {highlightMatch(user.phone)}</p>
-                        <p>
-                            🏷 Selected by: {user.selectedBy?.map(highlightMatch).join(", ") || "N/A"}
-                        </p>
-                        {/* Display Booked Slots */}
-                        {userBookedSlots.length > 0 && (
-                            <div className="mt-2 p-2 border rounded bg-gray-50 text-sm">
-                                <p className="font-medium flex items-center">
-                                    <CiClock2 className="text-2xl text-red-500" />
-                                    Booked Slots:
-                                </p>
-                                <ul className="mt-1 space-y-1">
-                                    {userBookedSlots.map((slot, index) => (
-                                        <li key={index} className="text-gray-700">
-                                            - {slot.timeSlot} by <span className="font-medium">{slot.company}</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h3 className="text-xl font-bold text-gray-800">
+                                {highlightMatch(user.firstName)} {highlightMatch(user.lastName)}
+                            </h3>
+                            <div className="flex items-center text-gray-600 mt-1">
+                                <FiBriefcase className="mr-2 opacity-70" />
+                                <span>{highlightMatch(user.title)} at {highlightMatch(user.company)}</span>
+                            </div>
+                        </div>
+                        
+                        <button
+                            onClick={() => setShowBookingForm(!showBookingForm)}
+                            className={`ml-4 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                                userBookedSlots.length >= timeSlots.length
+                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                    : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                            } flex items-center gap-2`}
+                            disabled={userBookedSlots.length >= timeSlots.length}
+                        >
+                            <CiCalendar className="text-lg" />
+                            {showBookingForm ? "Close" : "Book Slot"}
+                            {availableSlots > 0 && (
+                                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                    {availableSlots} left
+                                </span>
+                            )}
+                        </button>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                        <div className="flex items-center text-gray-700">
+                            <CiMail className="mr-3 text-lg opacity-70" />
+                            <span>{highlightMatch(user.email)}</span>
+                        </div>
+                        <div className="flex items-center text-gray-700">
+                            <CiPhone className="mr-3 text-lg opacity-70" />
+                            <span>{highlightMatch(user.phone)}</span>
+                        </div>
+                        {user.selectedBy?.length > 0 && (
+                            <div className="flex items-start text-gray-700">
+                                <FiTag className="mr-3 mt-1 text-lg opacity-70" />
+                                <div>
+                                    <span className="font-medium">Selected by:</span>{" "}
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                        {user.selectedBy.map((company, index) => (
+                                            <span key={index} className="bg-gray-100 px-2 py-1 rounded-full text-sm">
+                                                {highlightMatch(company)}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
-                </div>
-                <button
-  onClick={() => setShowBookingForm(!showBookingForm)}
-  className={`ml-4 px-4 py-2 rounded text-white transition-colors ${
-    userBookedSlots.length >= timeSlots.length
-      ? "bg-gray-400 cursor-not-allowed"
-      : "bg-blue-500 hover:bg-blue-600"
-  }`}
-  disabled={userBookedSlots.length >= timeSlots.length}
->
-  {showBookingForm ? "✕ Close" : "📅 Book Slot"}
-</button>
-            </div>
 
-            {showBookingForm && (
-                <form onSubmit={handleSubmit} className="mt-4 border-t pt-4">
-                    {/* Select One Company */}
-                    <div className="mb-4">
-                        <label className="block font-medium mb-2">🏢 Select One Company:</label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {selectedByOptions.map((company) => (
-                                <label
-                                    key={company}
-                                    className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50"
-                                >
-                                    <input
-                                        type="radio"
-                                        name="company"
-                                        value={company}
-                                        checked={selectedCompany === company}
-                                        onChange={() => handleCompanyChange(company)}
-                                        className="form-radio h-4 w-4 text-blue-500"
-                                    />
-                                    <span>{company} {selectedCompany === company && "✅"}</span>
-                                </label>
-                            ))}
+                    {/* Booked Slots */}
+                    {userBookedSlots.length > 0 && (
+                        <div className="mt-6 p-4 border border-gray-100 rounded-lg bg-gray-50">
+                            <div className="flex items-center text-gray-800 font-medium">
+                                <CiClock2 className="mr-2 text-xl" />
+                                <span>Booked Meetings</span>
+                            </div>
+                            <ul className="mt-3 space-y-2">
+                                {userBookedSlots.map((slot, index) => (
+                                    <li key={index} className="flex items-center justify-between bg-white p-3 rounded-lg shadow-xs">
+                                        <div className="flex items-center">
+                                            <span className="w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-xs font-medium mr-3">
+                                                {index + 1}
+                                            </span>
+                                            <span className="font-medium">{slot.timeSlot}</span>
+                                        </div>
+                                        <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm">
+                                            {slot.company}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
-                    </div>
+                    )}
+                </div>
 
-                    {/* Select Time Slot */}
-                    <div className="mb-4">
-                        <label className="block font-medium mb-2">⏰ Select Time Slot:</label>
-                        <select
-                            value={selectedTime}
-                            onChange={(e) => setSelectedTime(e.target.value)}
-                            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                            required
-                        >
-                            <option value="">Select a time slot</option>
-                            {timeSlots.map((time) => (
-                                <option
-                                    key={time}
-                                    value={time}
-                                    disabled={isTimeSlotBooked(time)} // Disable booked slots
-                                    className={isTimeSlotBooked(time) ? "text-red-500" : ""}
+                {/* Booking Form */}
+                {showBookingForm && (
+                    <div className="md:w-96 border-l border-gray-100 md:pl-6 md:ml-6">
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <CiCalendar />
+                                Schedule Meeting
+                            </h4>
+
+                            {/* Company Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Select Company
+                                </label>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {selectedByOptions.map((company) => (
+                                        <label
+                                            key={company}
+                                            className={`flex items-center p-3 rounded-lg cursor-pointer transition-all ${
+                                                selectedCompany === company
+                                                    ? "bg-blue-50 border border-blue-200"
+                                                    : "bg-gray-50 hover:bg-gray-100"
+                                            }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="company"
+                                                value={company}
+                                                checked={selectedCompany === company}
+                                                onChange={() => handleCompanyChange(company)}
+                                                className="form-radio h-4 w-4 text-blue-500 border-gray-300 focus:ring-blue-500"
+                                            />
+                                            <span className="ml-3 text-gray-700">{company}</span>
+                                            {selectedCompany === company && (
+                                                <FiCheck className="ml-auto text-green-500" />
+                                            )}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Time Slot Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Available Time Slots
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {timeSlots.map((time) => (
+                                        <button
+                                            type="button"
+                                            key={time}
+                                            onClick={() => !isTimeSlotBooked(time) && setSelectedTime(time)}
+                                            className={`p-2 rounded-lg text-center transition-all ${
+                                                isTimeSlotBooked(time)
+                                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                    : selectedTime === time
+                                                    ? "bg-blue-600 text-white"
+                                                    : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+                                            }`}
+                                            disabled={isTimeSlotBooked(time)}
+                                        >
+                                            {time}
+                                            {isTimeSlotBooked(time) && (
+                                                <span className="block text-xs text-red-500">
+                                                    Booked
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex justify-end space-x-3 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowBookingForm(false);
+                                        setSelectedCompany("");
+                                        setSelectedTime("");
+                                    }}
+                                    className="px-4 py-2 text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-100 transition-colors"
                                 >
-                                    {time} {isTimeSlotBooked(time) && <span className="text-red-500">(Booked {userBookedSlots.find(slot => slot.timeSlot === time)?.company} ❌)</span>}
-                                </option>
-                            ))}
-                        </select>
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting || !selectedCompany || !selectedTime}
+                                    className={`px-4 py-2 rounded-lg text-white transition-colors flex items-center gap-2 ${
+                                        isSubmitting || !selectedCompany || !selectedTime
+                                            ? "bg-gray-300 cursor-not-allowed"
+                                            : "bg-green-500 hover:bg-green-600"
+                                    }`}
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FiCheck />
+                                            Confirm Booking
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-end space-x-3">
-                        <button
-                            type="button"
-                            onClick={() => setShowBookingForm(false)}
-                            className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
-                        >
-                            Confirm Booking
-                        </button>
-                    </div>
-                </form>
-            )}
+                )}
+            </div>
         </div>
     );
 };

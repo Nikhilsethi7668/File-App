@@ -123,6 +123,27 @@ export const getFileData = async (req, res) => {
     });
   }
 };
+
+export const deleteAllUsers = async (req, res) => {
+  try {
+    const result = await UserCollection.deleteMany({});
+
+    return res.status(200).json({
+      success: true,
+      message: "All users deleted successfully",
+      deletedCount: result.deletedCount,
+    });
+
+  } catch (error) {
+    console.error("Error deleting all users:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
 // import { UserCollection } from "../model/filedata.model.js";
 
 // export const deleteSlot = async (req, res) => {
