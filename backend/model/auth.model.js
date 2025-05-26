@@ -16,30 +16,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    isAdmin: {
-      type: Boolean,
-      default: false,
-    },
-
     lastLogin: {
       type: Date,
       default: Date.now,
     },
     role: {
       type: String,
-      enum: ["citizen", "admin"],
-      default: "citizen",
+      enum: ["manager","viewer", "admin"],
+      default: "viewer",
     },
-
-    // isVerified: {
-    //   type: Boolean,
-    //   default: false,
-    // },
-	
-    // resetPasswordToken: String,
-    // resetPasswordExpiresAt: Date,
-    // verificationToken: String,
-    // verificationTokenExpiresAt: Date,
   },
   { timestamps: true }
 );

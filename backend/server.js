@@ -1,5 +1,4 @@
 import express, { urlencoded } from "express";
-import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -9,6 +8,7 @@ import connectDb from "./lib/db.js";
 
 // All routes here
 import fileRoutes from "./routes/file.routes.js";
+import eventRoutes from "./routes/event.route.js";
 import authRoutes from "./routes/auth.routes.js";
 import slotRoutes from "./routes/slot.routes.js";
 
@@ -31,6 +31,7 @@ app.use(cookieParser());
 // All routes here
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
+app.use("/api/events",eventRoutes);
 app.use("/api", slotRoutes);
 // app.use("/api/admin", adminRoutes);
 

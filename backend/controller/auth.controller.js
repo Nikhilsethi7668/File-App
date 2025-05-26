@@ -47,10 +47,7 @@ export const signup = async (req, res) => {
       email,
       password: hashedPassword,
       isAdmin,
-      // verificationToken,
-      // verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     });
-    console.log("user", user);
 
     await user.save();
 
@@ -153,6 +150,28 @@ export const login = async (req, res) => {
     res.status(400).json({
       success: false,
       message: `Login Failes : ${error}`,
+    });
+  }
+};
+export const usersList = async (req, res) => {
+  try {
+    const users = await User.find({}).select('username email');
+    if (!users) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Fetched in Successfully",
+      users
+    });
+  } catch (error) {
+    console.log("error", error);
+    res.status(400).json({
+      success: false,
+      message: `Failes : ${error}`,
     });
   }
 };
