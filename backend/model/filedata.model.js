@@ -23,4 +23,12 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+UserSchema.pre('deleteOne', { document: true, query: false }, async function(next) {
+  try {
+    await mongoose.model('Slot').deleteMany({ userId: this._id });
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 export const UserCollection = mongoose.model("UserCollection", UserSchema);
