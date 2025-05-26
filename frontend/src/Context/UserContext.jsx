@@ -51,6 +51,9 @@ const UserProvider = ({ children }) => {
             if (response.success) {
                 setUser(response.user);
                 setIsAuthenticated(true);
+                if (response.user && response.user._id) {
+                    localStorage.setItem("userId", response.user._id);
+                }
                 alert("Logged in successfully")
                 console.log("User logged in:", user);
                 return;

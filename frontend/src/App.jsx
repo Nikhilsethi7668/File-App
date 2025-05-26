@@ -9,6 +9,10 @@ import SignIn from "./Pages/SignIn.jsx";
 import SignUp from "./Pages/Signup.jsx";
 import ProtectedLogin from "./protectedRoutes/ProtectedLogin.jsx";
 import ProtectedAdmin from "./protectedRoutes/Admin.jsx";
+import DefaultPage from "./Pages/DefaultPage.jsx";
+import CreateEvent from "./Pages/CreateEvent.jsx";
+import EventDetail from "./Components/EventDetail.jsx";
+import UpdateEvent from "./Pages/UpdateEvent.jsx";
 
 function App() {
   return (
@@ -33,7 +37,11 @@ function App() {
           </ProtectedLogin>
         }
       >
-        <Route index element={<Dashboard />} /> {/* Default route */}
+        <Route index element={<DefaultPage />} /> {/* Default route */}
+        <Route path="/event/:id" element={<EventDetail />} />
+        <Route path="/event/update/:id" element={<UpdateEvent />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="create" element={<CreateEvent />} />
         <Route path="meeting" element={<Meeting />} />
         <Route path="company" element={<Company />} />
       </Route>
