@@ -4,7 +4,7 @@ import { Events } from "../model/event.model.js";
 // Create a new event
 export const createEvent = async (req, res) => {
   try {
-    const { title, image, description, assignedTo, createdBy } = req.body;
+    const { title, image, description, assignedTo, createdBy,startDate,endDate } = req.body;
     
     // Validate required fields
     if (!title || !assignedTo || !createdBy) {
@@ -16,7 +16,9 @@ export const createEvent = async (req, res) => {
       image,
       description,
       assignedTo,
-      createdBy
+      createdBy,
+      startDate,
+      endDate
     });
 
     const savedEvent = await newEvent.save();
