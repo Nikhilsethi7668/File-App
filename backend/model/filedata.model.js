@@ -14,6 +14,11 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    event: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Event",
+          required: true,
+        },
   },
   { timestamps: true }
 );

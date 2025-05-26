@@ -1,9 +1,16 @@
 import xlsx from "xlsx";
 import { UserCollection } from "../model/filedata.model.js";
-import { Slots } from "../model/Slots.js";
 
 export const uploadFile = async (req, res) => {
   try {
+    const { event } = req.params;
+    if (!event) {
+      return res.status(400).json({
+        success: false,
+        message: "Event id is required",
+      });
+    }
+    
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded." });
     }
@@ -57,7 +64,7 @@ export const uploadFile = async (req, res) => {
     // Process each row dynamically
     const processedData = data
       .map((row) => {
-        const rowData = {};
+        const rowData = { event }; // Add event ID to each record
 
         // Extract mapped fields
         Object.entries(fieldIndexes).forEach(([field, index]) => {
@@ -81,19 +88,16 @@ export const uploadFile = async (req, res) => {
           rowData.selectedBy = selectedBy;
         }
 
-        return Object.keys(rowData).length > 0 ? rowData : null;
+        return Object.keys(rowData).length > 1 ? rowData : null; // Changed to >1 because we always have event field
       })
       .filter(Boolean);
 
     console.log("Processed Data:", processedData);
 
     // Upsert data into database
-    // Replace the updateOne/upsert block with:
     if (processedData.length > 0) {
-      // Clear existing data and insert fresh data
-      await UserCollection.deleteMany({}); // Remove all existing documents
-      await Slots.deleteMany({});
-      await UserCollection.insertMany(processedData); // Insert new documents
+      await UserCollection.deleteMany({ event }); // Remove all existing documents for this event
+      await UserCollection.insertMany(processedData); // Insert new documents with event ID
     } else {
       return res.status(400).json({ error: "No valid data to insert" });
     }
@@ -113,7 +117,13 @@ export const uploadFile = async (req, res) => {
 
 export const getFileData = async (req, res) => {
   try {
-    const data = await UserCollection.find({});
+    const { event } = req.params
+     if(!event){
+       return res.status(400).json({
+      success: false,
+      message: "Event id is required",
+    });}
+    const data = await UserCollection.find({event:event});
     return res.status(200).json({ users: data });
   } catch (error) {
     console.error("Error fetching data:", error);
@@ -126,7 +136,14 @@ export const getFileData = async (req, res) => {
 
 export const deleteAllUsers = async (req, res) => {
   try {
-    const result = await UserCollection.deleteMany({});
+    const { event } = req.params
+    if(!event){
+       return res.status(400).json({
+      success: false,
+      message: "Event id is required",
+    });
+    }
+    const result = await UserCollection.deleteMany({event:event});
 
     return res.status(200).json({
       success: true,
