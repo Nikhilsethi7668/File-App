@@ -100,3 +100,16 @@ export const deleteEvent = async (req, res) => {
     });
   }
 };
+
+export const updateEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedEvent = await Events.findByIdAndUpdate(id, req.body, { new: true });
+    if (!updatedEvent) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    return res.status(200).json(updatedEvent);
+  } catch (error) {
+    return res.status(500).json({ error: "Internal Server Error", details: error.message });
+  }
+};

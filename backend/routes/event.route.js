@@ -1,5 +1,5 @@
 import express from 'express';
-import { createEvent, deleteEvent, getAllEvents, getEventById } from '../controller/event.controller.js';
+import { createEvent, deleteEvent, getAllEvents, getEventById, updateEvent } from '../controller/event.controller.js';
 
 
 const router = express.Router();
@@ -15,5 +15,7 @@ router.get('/:id', getEventById);
 
 // Delete an event by ID
 router.delete('/:id', deleteEvent);
+
+router.put('/:id', updateEvent);
 
 export default router;
