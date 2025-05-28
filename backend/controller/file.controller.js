@@ -35,30 +35,31 @@ export const uploadFile = async (req, res) => {
     // Remove header row
     data.shift();
 
-    // Define schema mapping
+    // Define schema mapping for your specific headers
     const fieldMappings = {
-      "sr no": "serialNo",
+      "sr. no": "serialNo",
       "first name": "firstName",
       "last name": "lastName",
-      company: "company",
-      title: "title",
-      email: "email",
-      phone: "phone",
+      "company name": "company",
+      "title": "title",
+      "email address": "email",
+      "mobile phone number": "phone",
     };
 
-    const selectionValues = new Set(["1ptr", "1corp", "1str"]);
+    const selectionValues = new Set(["1ptr", "1corp", "1str"]); // Your selection values
 
     // Identify column indexes based on mapping
     const fieldIndexes = {};
     headers.forEach((header, index) => {
-      if (fieldMappings[header]) {
-        fieldIndexes[fieldMappings[header]] = index;
+      const normalizedHeader = header.toLowerCase().trim();
+      if (fieldMappings[normalizedHeader]) {
+        fieldIndexes[fieldMappings[normalizedHeader]] = index;
       }
     });
 
     // Identify company selection columns (non-schema columns)
     const companyColumns = headers.filter(
-      (col) => !Object.keys(fieldMappings).includes(col)
+      (col) => !Object.values(fieldMappings).includes(col.toLowerCase())
     );
 
     // Process each row dynamically
@@ -88,7 +89,7 @@ export const uploadFile = async (req, res) => {
           rowData.selectedBy = selectedBy;
         }
 
-        return Object.keys(rowData).length > 1 ? rowData : null; // Changed to >1 because we always have event field
+        return Object.keys(rowData).length > 1 ? rowData : null;
       })
       .filter(Boolean);
 
@@ -96,8 +97,8 @@ export const uploadFile = async (req, res) => {
 
     // Upsert data into database
     if (processedData.length > 0) {
-      await UserCollection.deleteMany({ event }); // Remove all existing documents for this event
-      await UserCollection.insertMany(processedData); // Insert new documents with event ID
+      await UserCollection.deleteMany({ event });
+      await UserCollection.insertMany(processedData);
     } else {
       return res.status(400).json({ error: "No valid data to insert" });
     }
@@ -161,6 +162,69 @@ export const deleteAllUsers = async (req, res) => {
   }
 };
 
+export const updateUserStatusByEmail = async (req, res) => {
+  try {
+    const { email, status } = req.body;
+    const apiKey = req.headers['x-api-key'];
+
+    // 1. Validate API Key
+    if (apiKey !== process.env.X_API_KEY||apiKey==undefined) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Invalid API Key",
+      });
+    }
+
+    // 2. Validate required fields
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    if (!status || !["pending", "completed", "not-available", "removed"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid status is required (pending, completed, not-available, removed)",
+      });
+    }
+
+    // 3. Find and update the user by email
+    const updatedUser = await UserCollection.findOneAndUpdate(
+      { email: email },
+      { $set: { status: status } },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found with the provided email",
+      });
+    }
+
+    // 4. Return success response
+    return res.status(200).json({
+      success: true,
+      message: "User status updated successfully",
+      user: {
+        email: updatedUser.email,
+        status: updatedUser.status,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+      },
+    });
+
+  } catch (error) {
+    console.error("Error updating user status:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
 // import { UserCollection } from "../model/filedata.model.js";
 
 // export const deleteSlot = async (req, res) => {

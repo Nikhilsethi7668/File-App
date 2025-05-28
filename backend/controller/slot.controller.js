@@ -1,12 +1,11 @@
 import { Slots } from "../model/Slots.js";
-import { UserCollection } from "../model/filedata.model.js";
 
 export const deleteSlot = async (req, res) => {
   try {
     const userId = req.params.id;
-    const { slotTime } = req.body;
+    const { slotTime,event } = req.body;
 
-    if (!userId || !slotTime) {
+    if (!userId || !slotTime||!event) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -14,6 +13,7 @@ export const deleteSlot = async (req, res) => {
     const deletedSlot = await Slots.findOneAndDelete({
       userId: userId,
       timeSlot: slotTime,
+      event
     });
 
     if (!deletedSlot) {
@@ -29,9 +29,14 @@ export const deleteSlot = async (req, res) => {
 export const getCompanyData = async (req, res) => {
   try {
     const companyName = req.params.company.toLowerCase();
+    const { event } = req.body;
+
+    if (!event) {
+      return res.status(400).json({ error: "Event id is required" });
+    }
 
     // Find slots for the company and populate specific user fields from UserCollection schema
-    const slots = await Slots.find({ company: companyName }).populate(
+    const slots = await Slots.find({ company: companyName,event }).populate(
       "userId",
       "serialNo firstName lastName company title email phone selectedBy"
     );
@@ -47,14 +52,18 @@ export const getCompanyData = async (req, res) => {
 
 export const bookSlot = async (req, res) => {
   try {
-    const { userId, company, timeSlot } = req.body;
-    const existingTimeSlot = await Slots.findOne({ timeSlot, userId });
+    const { userId, company,event, timeSlot } = req.body;
+
+    if (!userId || !timeSlot||!event||!company) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    const existingTimeSlot = await Slots.findOne({event, timeSlot, userId });
     if (existingTimeSlot) {
       return res
         .status(400)
         .json({ error: "Slot already booked please choose another slot" });
     }
-    const existingSlot = await Slots.findOne({ userId, company });
+    const existingSlot = await Slots.findOne({event, userId, company });
 
     if (existingSlot) {
       return res
@@ -62,7 +71,7 @@ export const bookSlot = async (req, res) => {
         .json({ error: "Slot with same company already booked" });
     }
 
-    const newSlot = new Slots({ userId, company, timeSlot });
+    const newSlot = new Slots({ userId, company, timeSlot,event });
     await newSlot.save();
 
     res.status(201).json({ message: "Slot booked successfully" });
@@ -73,7 +82,12 @@ export const bookSlot = async (req, res) => {
 };
 export const getAllBookedSlots = async (req, res) => {
   try {
-    const slots = await Slots.find();
+    const { event } = req.body;
+
+    if (!event) {
+      return res.status(400).json({ error: "Event id is required" });
+    }
+    const slots = await Slots.find({event});
     res.json(slots);
   } catch (error) {
     console.error("Error fetching all booked slots:", error);

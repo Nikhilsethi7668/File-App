@@ -13,7 +13,7 @@ export const protectRoute = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, "SECRET_KEY_PLEXADUBAI");
+    const decoded = jwt.verify(token,process.env.JWT_Token);
     console.log("Decoded Token:", decoded);
     console.log("Token:", token);
 

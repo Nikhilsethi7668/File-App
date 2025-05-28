@@ -3,6 +3,7 @@ import {
   uploadFile,
   getFileData,
   deleteAllUsers,
+  updateUserStatusByEmail,
   // getCompanyData,
 } from "../controller/file.controller.js";
 import multer from "multer";
@@ -16,6 +17,7 @@ router.post("/upload-file/:event", upload.single("file"), uploadFile);
 // Get file data route
 router.get("/get-filedata/:event", getFileData);
 router.delete("/delete-filedata/:event", deleteAllUsers);
+router.post("/update-status",updateUserStatusByEmail)
 // router.get(`/company/:companyName`, getCompanyData);`
 
 export default router;
