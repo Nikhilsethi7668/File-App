@@ -38,9 +38,9 @@ function App() {
         }
       >
         <Route index element={<DefaultPage />} /> {/* Default route */}
-        <Route path="/event/:id" element={<EventDetail />} />
+        <Route path="/event/:id" element={<Dashboard />} />
         <Route path="/event/update/:id" element={<UpdateEvent />} />
-        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="dashboard" element={<></>} />
         <Route path="create" element={<CreateEvent />} />
         <Route path="meeting" element={<Meeting />} />
         <Route path="company" element={<Company />} />

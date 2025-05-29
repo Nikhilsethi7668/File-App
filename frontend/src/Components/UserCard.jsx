@@ -76,7 +76,7 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
     const availableSlots = timeSlots.length - userBookedSlots.length;
 
     return (
-        <div className="border border-gray-200 rounded-xl p-6 mb-6 shadow-sm bg-white transition-all duration-200 hover:shadow-lg group">
+        <div className="border border-gray-200 rounded-xl md:w-auto w-[90vw] p-6 mb-6 shadow-sm bg-white transition-all duration-200 hover:shadow-lg group">
             <div className="flex flex-col md:flex-row gap-6">
                 {/* User Info Section */}
                 <div className="flex-1">
@@ -103,7 +103,7 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
                             <CiCalendar className="text-lg" />
                             {showBookingForm ? "Close" : "Book Slot"}
                             {availableSlots > 0 && (
-                                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                <span className="bg-blue-100 text-blue-800 text-[10px] md:text-xs px-2 py-1 rounded-full">
                                     {availableSlots} left
                                 </span>
                             )}

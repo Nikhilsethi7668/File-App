@@ -4,10 +4,10 @@ import * as Yup from 'yup';
 import { UserContext } from '../Context/UserContext';
 
 const validationSchema = Yup.object({
-    userName: Yup.string()
-        .required('User name is required')
-        .min(2, 'User name must be at least 2 characters')
-        .max(50, 'User name cannot be longer than 50 characters'),
+    username: Yup.string()
+        .required('Username is required')
+        .min(2, 'Username must be at least 2 characters')
+        .max(50, 'Username cannot be longer than 50 characters'),
     email: Yup.string()
         .email('Invalid email address')
         .required('Email is required'),
@@ -18,6 +18,9 @@ const validationSchema = Yup.object({
     confirmPassword: Yup.string()
         .oneOf([Yup.ref('password'), null], 'Passwords must match')
         .required('Confirm password is required'),
+    role: Yup.string()
+        .oneOf(['viewer', 'manager', 'admin'], 'Invalid role')
+        .required('Role is required')
 });
 
 const SignUp = () => {
@@ -27,13 +30,13 @@ const SignUp = () => {
     const submission = async (data) => {
         setIsSubmitting(true);
         const { confirmPassword, ...signupData } = data;
-        console.log(signupData);
+        console.log('Submitting:', signupData);
 
         try {
             await signup(signupData);
             alert('Registration Successful!');
         } catch (error) {
-            alert(error.response.data.message);
+            alert(error.response?.data?.message || 'Registration failed');
         } finally {
             setIsSubmitting(false);
         }
@@ -53,22 +56,30 @@ const SignUp = () => {
                 <p className="text-gray-500 text-center mb-8">Join us to get started</p>
                 
                 <Formik
-                    initialValues={{ userName: '', email: '', password: '', confirmPassword: '', isAdmin: false }}
+                    initialValues={{ 
+                        username: '', 
+                        email: '', 
+                        password: '', 
+                        confirmPassword: '', 
+                        role: 'viewer' 
+                    }}
                     validationSchema={validationSchema}
-                    onSubmit={(values) => submission(values)}
+                    onSubmit={submission}
                 >
                     {({ errors, touched }) => (
                         <Form className="space-y-5">
                             <div>
-                                <label htmlFor="userName" className="block text-sm font-medium text-gray-700 mb-1">User Name</label>
+                                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
                                 <Field 
                                     type="text" 
-                                    id="userName" 
-                                    name="userName" 
-                                    placeholder="Enter your name" 
-                                    className={`mt-1 block w-full px-4 py-3 rounded-lg border ${errors.userName && touched.userName ? 'border-red-300' : 'border-gray-300'} focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition duration-200`} 
+                                    id="username" 
+                                    name="username" 
+                                    placeholder="Enter your username" 
+                                    className={`mt-1 block w-full px-4 py-3 rounded-lg border ${errors.username && touched.username ? 'border-red-300' : 'border-gray-300'} focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition duration-200`} 
                                 />
-                                {errors.userName && touched.userName && <p className="text-red-500 text-xs mt-1">{errors.userName}</p>}
+                                {errors.username && touched.username && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.username}</p>
+                                )}
                             </div>
                             
                             <div>
@@ -80,7 +91,9 @@ const SignUp = () => {
                                     placeholder="your@email.com" 
                                     className={`mt-1 block w-full px-4 py-3 rounded-lg border ${errors.email && touched.email ? 'border-red-300' : 'border-gray-300'} focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition duration-200`} 
                                 />
-                                {errors.email && touched.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                                {errors.email && touched.email && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                                )}
                             </div>
                             
                             <div>
@@ -92,7 +105,9 @@ const SignUp = () => {
                                     placeholder="••••••••" 
                                     className={`mt-1 block w-full px-4 py-3 rounded-lg border ${errors.password && touched.password ? 'border-red-300' : 'border-gray-300'} focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition duration-200`} 
                                 />
-                                {errors.password && touched.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+                                {errors.password && touched.password && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+                                )}
                             </div>
                             
                             <div>
@@ -104,17 +119,26 @@ const SignUp = () => {
                                     placeholder="••••••••" 
                                     className={`mt-1 block w-full px-4 py-3 rounded-lg border ${errors.confirmPassword && touched.confirmPassword ? 'border-red-300' : 'border-gray-300'} focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition duration-200`} 
                                 />
-                                {errors.confirmPassword && touched.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
+                                {errors.confirmPassword && touched.confirmPassword && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>
+                                )}
                             </div>
                             
-                            <div className="flex items-center">
+                            <div>
+                                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                                 <Field 
-                                    type="checkbox" 
-                                    id="isAdmin" 
-                                    name="isAdmin" 
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                />
-                                <label htmlFor="isAdmin" className="ml-2 block text-sm text-gray-700">Admin privileges</label>
+                                    as="select"
+                                    id="role" 
+                                    name="role" 
+                                    className={`mt-1 block w-full px-4 py-3 rounded-lg border ${errors.role && touched.role ? 'border-red-300' : 'border-gray-300'} focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition duration-200`}
+                                >
+                                    <option value="viewer">Viewer</option>
+                                    <option value="manager">Manager</option>
+                                    <option value="admin">Admin</option>
+                                </Field>
+                                {errors.role && touched.role && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.role}</p>
+                                )}
                             </div>
                             
                             <button 

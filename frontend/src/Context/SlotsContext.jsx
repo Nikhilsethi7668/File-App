@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { createContext } from 'react';
 import Axios from '../Api/Axios';
-
+import { useLocation } from 'react-router-dom'; 
 // Create the context
 const SlotsContext = createContext();
 
 // Create the provider component
 export const SlotsContextProvider = ({ children }) => {
     const [slots, setSlots] = useState([]);
-
+    const location = useLocation();
     // Fetch all booked slots
     const fetchSlots = async () => {
         try {
@@ -18,13 +18,15 @@ export const SlotsContextProvider = ({ children }) => {
             setSlots(data);
         } catch (error) {
             console.error('Error fetching slots:', error);
-            alert('Error fetching slots: ' + error.message);
+            // alert('Error fetching slots: ' + error.message);
         }
     };
 
     // Fetch slots on component mount
     useEffect(() => {
-        fetchSlots();
+       if (location.pathname.includes('event')) {
+            fetchSlots();
+        }
     }, []);
 
     return (

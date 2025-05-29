@@ -1,18 +1,21 @@
 import React, { createContext, useState, useEffect } from 'react';
 import Axios from '../Api/Axios';
-
+import { useLocation } from 'react-router-dom'; 
 export const DataContext = createContext();
 
 export const DataContextProvider = ({ children }) => {
     const [fileUserData, setFileUserData] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-
-    const fetchData = async () => {
+    const location = useLocation();
+    const fetchData = async (eventId) => {
+        if(!eventId){
+            return
+        }
         setIsLoading(true);
         setError(null);
         try {
-            const response = await Axios.get("/files/get-filedata");
+            const response = await Axios.get("/files/get-filedata/"+eventId);
             if (response.status >= 300) {
                 throw new Error("Failed to fetch data");
             }
@@ -26,9 +29,11 @@ export const DataContextProvider = ({ children }) => {
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    //   useEffect(() => {
+    //     if (location.pathname.includes('event')) {
+    //         fetchData();
+    //     }
+    // }, [location.pathname]); 
 
     const getUniqueCompanies = () => {
         if (!fileUserData) return [];

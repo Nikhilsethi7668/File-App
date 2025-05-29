@@ -3,15 +3,14 @@ import UserCard from "../Components/UserCard";
 import DataContext from "../Context/DataContext";
 import Axios from "../Api/Axios";
 import { FiUpload, FiSearch, FiUsers, FiClock, FiDelete } from "react-icons/fi";
-
+import { useParams } from 'react-router-dom';
 const FileUpload = () => {
+  const { id } = useParams();  
   const [file, setFile] = useState(null);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
-  // const [fetching, setFetching] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const { fileUserData,isLoading,refetch } = useContext(DataContext);
-  // const { slots, setSlots, fetchSlots } = useContext(SlotsContext);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -24,11 +23,11 @@ const FileUpload = () => {
     }
   
     const formData = new FormData();
-    formData.append("file", file); // Make sure this matches your backend's expected field name
+    formData.append("file", file); 
     setLoading(true);
   
     try {
-      const response = await Axios.post("/files/upload-file", formData, {
+      const response = await Axios.post("/files/upload-file/"+id, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -45,38 +44,25 @@ const FileUpload = () => {
       );
     } finally {
       setLoading(false);
-      refetch()
+      refetch(id)
       setFile(null);
     }
   };
 
   const deleteData = async () => {
     try {
-      const response = await Axios.delete("/files/delete-filedata");
+      const response = await Axios.delete("/files/delete-filedata/"+id);
       if (!response.status > 300) throw new Error("Failed to delete data");
-      refetch()
+      refetch(id)
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
-  // const fetchData = async () => {
-  //   setFetching(true);
-  //   try {
-  //     const response = await Axios.get("/files/get-filedata");
-  //     if (!response.status > 300) throw new Error("Failed to fetch data");
-
-  //     setFileUserData(response.data.users || []);
-  //   } catch (error) {
-  //     console.error("Error fetching data:", error);
-  //   } finally {
-  //     setFetching(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchData();
-  // }, []);
-
+useEffect(()=>{
+  if(id){
+    refetch(id)
+  }
+},[id])
   useEffect(() => {
     if (fileUserData && Array.isArray(fileUserData)) {
       setData(fileUserData);

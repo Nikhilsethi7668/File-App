@@ -9,64 +9,68 @@ import { generateTokenAndCookie } from "../utils/generateToken.js";
 // import { sendResetSuccessEmail } from "../mailtrap/email.js";
 
 export const signup = async (req, res) => {
-  console.log(req.body);
-
-  const { userName, email, password, isAdmin } = req.body;
-  console.log(userName, email, password, isAdmin);
+  const { username, email, password, role } = req.body;
+  console.log("Signup attempt:", { username, email, role });
 
   try {
-    if (!userName || !email || !password) {
-      throw new Error("All fields are required");
+    // Validation
+    if (!username || !email || !password) {
+      throw new Error("Username, email and password are required");
     }
 
-    const userAlreadyExists = await User.findOne({ email });
+    if (role && !["manager", "viewer", "admin"].includes(role)) {
+      throw new Error("Invalid role specified");
+    }
 
-    if (userAlreadyExists) {
+    // Check for existing users
+    const [emailExists, usernameExists] = await Promise.all([
+      User.findOne({ email }),
+      User.findOne({ username })
+    ]);
+
+    if (emailExists) {
       return res.status(400).json({
         success: false,
-        message: "User already exist with this email",
+        message: "Email already registered",
       });
     }
-    const userAlreadyExistsbyUsername = await User.findOne({
-      username: userName,
-    });
 
-    if (userAlreadyExistsbyUsername) {
+    if (usernameExists) {
       return res.status(400).json({
         success: false,
-        message: "User already exists with this username",
+        message: "Username already taken",
       });
     }
-    const username = userName;
 
-    console.log("password", password);
+    // Create new user
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User({
+    
+    const newUser = await User.create({
       username,
       email,
       password: hashedPassword,
-      isAdmin,
+      role: role || "viewer", // Default to viewer if not specified
+      lastLogin: new Date() // Set initial login time
     });
 
-    await user.save();
+    // Generate auth token
+    generateTokenAndCookie(res, newUser._id);
 
-    generateTokenAndCookie(res, user._id);
-
-    //await sendVerificationEmail(user.email, verificationToken);
+    // Return response without sensitive data
+    const { password: _, ...userWithoutPassword } = newUser._doc;
 
     res.status(201).json({
       success: true,
-      message: "User created successfully",
-      user: {
-        ...user._doc,
-        password: undefined,
-        confirmPassword: undefined,
-      },
+      message: "User registered successfully",
+      user: userWithoutPassword
     });
+
   } catch (error) {
-    console.log("error", error);
-    res.status(400).json({ success: false, message: error.message });
+    console.error("Signup error:", error.message);
+    res.status(400).json({ 
+      success: false, 
+      message: error.message || "Registration failed" 
+    });
   }
 };
 
