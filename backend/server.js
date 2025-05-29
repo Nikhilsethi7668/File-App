@@ -11,6 +11,7 @@ import fileRoutes from "./routes/file.routes.js";
 import eventRoutes from "./routes/event.route.js";
 import authRoutes from "./routes/auth.routes.js";
 import slotRoutes from "./routes/slot.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 dotenv.config();
 const app = express();
@@ -33,6 +34,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/events",eventRoutes);
 app.use("/api", slotRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 // app.use("/api/admin", adminRoutes);
 
 app.listen(PORT, async () => {
