@@ -1,9 +1,11 @@
 import React, { useContext, useEffect, useState } from "react";
 import DataContext from "../Context/DataContext";
 import Axios from "../Api/Axios";
+import { useParams } from 'react-router-dom';
 
 const Meeting = () => {
-    const { fileUserData, setFileUserData } = useContext(DataContext);
+    const { id } = useParams(); 
+    const { fileUserData, setFileUserData,refetch } = useContext(DataContext);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -20,10 +22,10 @@ const Meeting = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const userResponse = await Axios.get("/files/get-filedata");
+            const userResponse = await Axios.get("/files/get-filedata/"+id);
             if (!userResponse.status>300) throw new Error("Failed to fetch user data");
             const userData = await userResponse.data;
-            const slotsResponse = await Axios.get("/slot/get-all-booked-slots");
+            const slotsResponse = await Axios.post("/slot/get-all-booked-slots",{event:id});
             if (!slotsResponse.status>300) throw new Error("Failed to fetch slots");
             const slotsData = await slotsResponse.data;
 
@@ -72,7 +74,11 @@ const Meeting = () => {
             alert("Error deleting slot: " + error.message);
         }
     };
-
+    useEffect(() => {
+        if (id) {
+            fetchData(id);
+        }
+    }, [id]); 
     useEffect(() => {
         if (searchQuery.trim() === "") {
             setFilteredUsers(fileUserData);

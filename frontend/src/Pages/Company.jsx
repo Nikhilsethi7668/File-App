@@ -1,9 +1,11 @@
 import React, { useContext, useState, useEffect } from "react";
 import { DataContext } from "../Context/DataContext";
 import Axios from "../Api/Axios";
+import { useParams } from 'react-router-dom';
 
 const Company = () => {
-    const { fileUserData, getUniqueCompanies } = useContext(DataContext);
+    const { id } = useParams(); 
+    const { fileUserData, getUniqueCompanies,refetch } = useContext(DataContext);
     const [users, setUsers] = useState([]);
     const [selectedCompany, setSelectedCompany] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -16,6 +18,12 @@ const Company = () => {
         setCompanies(getUniqueCompanies());
     }, [fileUserData]);
 
+        useEffect(() => {
+            if (id) {
+                refetch(id);
+            }
+        }, [id]); 
+
     const fetchUsers = async (companyName) => {
         const encodedCompanyName = encodeURIComponent(companyName);
         setSelectedCompany(companyName);
@@ -23,7 +31,7 @@ const Company = () => {
         setError(null);
 
         try {
-            const response = await Axios.get(`/slot/company/${encodedCompanyName}`);
+            const response = await Axios.post(`/slot/company/${encodedCompanyName}`,{event:id});
             if (!response.status>300) {
                 throw new Error("Failed to fetch users");
             }

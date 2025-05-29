@@ -3,8 +3,10 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { UserContext } from "../Context/UserContext";
 import { FiMenu, FiX, FiUser } from "react-icons/fi"; // Added User Icon
 import { MdKeyboardArrowDown } from "react-icons/md"; // Arrow for dropdown
+import { useParams } from 'react-router-dom';
 
 const Navbar = () => {
+    const { id } = useParams(); 
     const { isAuthenticated, login, logout } = useContext(UserContext);
     const [isOpen, setIsOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false); // Profile dropdown state
@@ -20,9 +22,10 @@ const Navbar = () => {
 
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex space-x-6">
-                    <Link to="/" className="text-white hover:text-gray-200 transition">BookUserSlots</Link>
-                    <Link to="/meeting" className="text-white hover:text-gray-200 transition">CheckUserBooking</Link>
-                    <Link to="/company" className="text-white hover:text-gray-200 transition">CompanyData</Link>
+                    <Link to="/event" className="text-white hover:text-gray-200 transition">Events</Link>
+                    {id&&<>
+                    <Link to={`/event/${id}/meeting`} className="text-white hover:text-gray-200 transition">Check Users Booking</Link>
+                    <Link to={`/event/${id}/company`} className="text-white hover:text-gray-200 transition">Company Data</Link></>}
                 </div>
 
                 {/* Authentication & Profile */}

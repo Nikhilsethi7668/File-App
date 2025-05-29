@@ -252,6 +252,7 @@ useEffect(()=>{
         <div className="grid gap-4">
           {filteredData.map((user, index) => (
             <UserCard
+              eventId={id}
               key={user._id || index}
               user={user}
               searchQuery={searchQuery}

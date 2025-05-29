@@ -4,7 +4,7 @@ import { CiClock2, CiCalendar, CiUser, CiMail, CiPhone } from "react-icons/ci";
 import { FiBriefcase, FiTag, FiX, FiCheck } from "react-icons/fi";
 import SlotsContext from "../Context/SlotsContext.jsx";
 
-const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots = [] }) => {
+const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, timeSlots = [] }) => {
     const [user, setUser] = useState(initialUser);
     const [showBookingForm, setShowBookingForm] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState("");
@@ -48,12 +48,13 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
                 userId: user._id,
                 timeSlot: selectedTime,
                 company: selectedCompany,
+                event:eventId
             };
 
             const response = await Axios.post(`/booking-slot`, data, {
                 headers: { "Content-Type": "application/json" }
             });
-            await fetchSlots();
+            await fetchSlots(eventId);
             alert(response.data.message);
             setShowBookingForm(false);
         } catch (error) {
@@ -64,13 +65,19 @@ const UserCard = ({ user: initialUser, searchQuery, selectedByOptions, timeSlots
         }
     };
 
+    useEffect(()=>{
+        if(eventId){
+        fetchSlots(eventId); 
+        }
+    },[eventId])
+
     // Filter slots for the current user
     const userBookedSlots = slots.filter(slot => slot.userId === user._id);
 
     // Check if a time slot is booked
-    const isTimeSlotBooked = (time) => {
-        return userBookedSlots.some(slot => slot.timeSlot === time);
-    };
+  const isTimeSlotBooked = (time) => {
+    return slots.some(slot => slot.timeSlot === time);
+};
 
     // Calculate available slots
     const availableSlots = timeSlots.length - userBookedSlots.length;

@@ -42,8 +42,8 @@ function App() {
         <Route path="/event/update/:id" element={<UpdateEvent />} />
         <Route path="dashboard" element={<></>} />
         <Route path="create" element={<CreateEvent />} />
-        <Route path="meeting" element={<Meeting />} />
-        <Route path="company" element={<Company />} />
+        <Route path="/event/:id/meeting" element={<Meeting />} />
+        <Route path="/event/:id/company" element={<Company />} />
       </Route>
 
       {/* Fallback route for invalid paths */}
