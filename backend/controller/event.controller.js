@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Events } from "../model/event.model.js";
+import { User } from "../model/auth.model.js";
 
 // Create a new event
 export const createEvent = async (req, res) => {
@@ -35,10 +36,23 @@ export const createEvent = async (req, res) => {
 // Get all events
 export const getAllEvents = async (req, res) => {
   try {
-    const events = await Events.find({})
-      .populate('assignedTo', 'username email') // Example fields to populate
+    // First fetch the user using req.userId
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    let query = {};
+    
+    // If user is not admin, only show events assigned to them
+    if (user.role !== 'admin') {
+      query = { assignedTo: req.userId };
+    }
+
+    const events = await Events.find(query)
+      .populate('assignedTo', 'username email role')
       .populate('createdBy', 'username email');
-      
+
     return res.status(200).json(events);
   } catch (error) {
     console.error("Error fetching events:", error);

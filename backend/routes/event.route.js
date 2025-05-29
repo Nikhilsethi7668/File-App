@@ -1,5 +1,6 @@
 import express from 'express';
 import { createEvent, deleteEvent, getAllEvents, getEventById, updateEvent } from '../controller/event.controller.js';
+import { protectRoute } from '../middleware/auth.middleware.js';
 
 
 const router = express.Router();
@@ -8,7 +9,7 @@ const router = express.Router();
 router.post('/', createEvent);
 
 // Get all events
-router.get('/', getAllEvents);
+router.get('/',protectRoute, getAllEvents);
 
 // Get a single event by ID
 router.get('/:id', getEventById);
