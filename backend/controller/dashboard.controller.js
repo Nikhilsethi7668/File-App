@@ -107,7 +107,7 @@ export const getDashboardData = async (req, res) => {
         $group: {
           _id: {
             $dateToString: {
-              format: timeRange === 'week' ? "%Y-%m-%d" : "%Y-%m-%W",
+              format: timeRange === 'week' ? "%Y-%m-%d" : "%Y-%m",
               date: "$createdAt"
             }
           },

@@ -13,6 +13,7 @@ import DefaultPage from "./Pages/DefaultPage.jsx";
 import CreateEvent from "./Pages/CreateEvent.jsx";
 import EventDetail from "./Components/EventDetail.jsx";
 import UpdateEvent from "./Pages/UpdateEvent.jsx";
+import DashboardStats from "./Components/Dashboard/DashboardStats.jsx";
 
 function App() {
   return (
@@ -40,7 +41,7 @@ function App() {
         <Route index element={<DefaultPage />} /> {/* Default route */}
         <Route path="/event/:id" element={<Dashboard />} />
         <Route path="/event/update/:id" element={<UpdateEvent />} />
-        <Route path="dashboard" element={<></>} />
+        <Route path="dashboard" element={<DashboardStats />} />
         <Route path="create" element={<CreateEvent />} />
         <Route path="/event/:id/meeting" element={<Meeting />} />
         <Route path="/event/:id/company" element={<Company />} />
