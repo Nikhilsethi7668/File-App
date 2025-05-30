@@ -14,5 +14,5 @@ router.post(`/booking-slot`, bookSlot);
 router.delete(`/slot/delete/:id`, deleteSlot);
 router.post(`/slot/get-all-booked-slots`, getAllBookedSlots);
 router.post(`/slot/company/:company`, getCompanyData);
-router.post(`/slot/toggle-completed/:slotId`, toggleCompletion);
+router.post(`/slot/toggle-completed/:id`, toggleCompletion);
 export default router;
