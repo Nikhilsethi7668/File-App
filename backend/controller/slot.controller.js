@@ -30,7 +30,6 @@ export const getCompanyData = async (req, res) => {
   try {
     const companyName = req.params.company.toLowerCase();
     const { event } = req.body;
-
     if (!event) {
       return res.status(400).json({ error: "Event id is required" });
     }
@@ -115,18 +114,32 @@ export const getAllBookedSlots = async (req, res) => {
 export const toggleCompletion = async (req, res) => {
   try {
     const slotId = req.params.id;
-    const { completed } = req.body; // Expecting { completed: true/false }
+    const { completed } = req.body;
+
+    if (typeof completed !== 'boolean') {
+      return res.status(400).json({ error: "Completed status must be a boolean" });
+    }
 
     const updatedSlot = await Slots.findByIdAndUpdate(
       slotId,
-      { completed },
-      { new: true }
+      { $set: { completed } },  // Explicit $set operator
+      { new: true, runValidators: true }  // Return updated doc and run validators
     );
-    console.log(updatedSlot);
 
-    return res.status(200).json(updatedSlot);
+    if (!updatedSlot) {
+      return res.status(404).json({ error: "Slot not found" });
+    }
+
+    return res.status(200).json({
+      message: "Slot updated successfully",
+      slot: updatedSlot
+    });
+    
   } catch (error) {
     console.error("Error updating slot status:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ 
+      error: "Internal Server Error",
+      details: error.message 
+    });
   }
 };
