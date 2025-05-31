@@ -194,7 +194,7 @@ const DefaultPage = () => {
                   onClick={() => navigate(`/event/${event._id}`)}
                 >
                   {(
-                    <div className="h-48 overflow-hidden relative">
+                    <div className="h-48 w-full overflow-hidden relative">
                       <img
                         src={event.image || "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg"}
                         alt={event.title}
@@ -229,7 +229,7 @@ const DefaultPage = () => {
                         </button>
                       </div>
                     </div>
-                    <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{event.description || "No description provided"}</p>
                     
                     <div className="mt-auto pt-4 border-t border-gray-100">
                       <div className="flex items-center text-sm text-gray-500 mb-2">

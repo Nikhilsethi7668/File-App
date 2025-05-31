@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Select from 'react-select';
 import Axios from '../../Api/Axios';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
@@ -7,20 +8,67 @@ const DashboardStats = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [timeRange, setTimeRange] = useState('all');
+  
+  // New state for multiselect
+  const [eventOptions, setEventOptions] = useState([]);
+  const [selectedEvents, setSelectedEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
 
   // Colors for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
   useEffect(() => {
+    fetchEventOptions();
+  }, []);
+
+  useEffect(() => {
     fetchDashboardData();
-  }, [timeRange]);
+  }, [timeRange, selectedEvents]);
+
+  const fetchEventOptions = async () => {
+    try {
+      setEventsLoading(true);
+      const response = await Axios.get('/events/event-list');
+      if (response.data.success) {
+        const options = response.data.data.map(event => ({
+          value: event.id,
+          label: event.title
+        }));
+        setEventOptions(options);
+      }
+    } catch (err) {
+      console.error('Failed to fetch events:', err);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const params = timeRange !== 'all' ? { timeRange } : {};
-      const response = await Axios.get('/dashboard', { params });
-      setDashboardData(response.data.data);
+      
+      if (selectedEvents.length === 0) {
+        // If no events selected, fetch data for all events
+        const params = timeRange !== 'all' ? { timeRange } : {};
+        const response = await Axios.get('/dashboard', { params });
+        setDashboardData(response.data.data);
+      } else {
+        // If events are selected, make multiple API calls and combine the data
+        const dashboardPromises = selectedEvents.map(event => {
+          const params = {
+            ...(timeRange !== 'all' && { timeRange }),
+            eventId: event.value
+          };
+          return Axios.get('/dashboard', { params });
+        });
+
+        const responses = await Promise.all(dashboardPromises);
+        
+        // Combine data from multiple responses
+        const combinedData = combineEventData(responses.map(res => res.data.data));
+        setDashboardData(combinedData);
+      }
+      
       setError('');
     } catch (err) {
       setError('Failed to fetch dashboard data');
@@ -28,6 +76,132 @@ const DashboardStats = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const combineEventData = (dataArray) => {
+    if (dataArray.length === 0) return null;
+    if (dataArray.length === 1) return dataArray[0];
+
+    // Initialize combined statistics
+    const combined = {
+      statistics: {
+        totalUsers: 0,
+        totalEvents: 0,
+        giftsCollected: 0,
+        statusDistribution: {},
+        topCompanies: [],
+        topEvents: [],
+        topSelectors: [],
+        registrationTrends: []
+      },
+      timeRange: dataArray[0].timeRange,
+      eventFilter: 'multiple'
+    };
+
+    const companyMap = new Map();
+    const eventMap = new Map();
+    const selectorMap = new Map();
+    const trendsMap = new Map();
+
+    dataArray.forEach(data => {
+      const stats = data.statistics;
+      
+      // Sum basic statistics
+      combined.statistics.totalUsers += stats.totalUsers;
+      combined.statistics.totalEvents += stats.totalEvents;
+      combined.statistics.giftsCollected += stats.giftsCollected;
+      
+      // Combine status distribution
+      Object.entries(stats.statusDistribution).forEach(([status, count]) => {
+        combined.statistics.statusDistribution[status] = 
+          (combined.statistics.statusDistribution[status] || 0) + count;
+      });
+      
+      // Combine company data
+      stats.topCompanies.forEach(company => {
+        const existing = companyMap.get(company._id) || 0;
+        companyMap.set(company._id, existing + company.count);
+      });
+      
+      // Combine event data
+      stats.topEvents.forEach(event => {
+        const existing = eventMap.get(event._id) || 0;
+        eventMap.set(event._id, existing + event.count);
+      });
+      
+      // Combine selector data
+      stats.topSelectors.forEach(selector => {
+        const existing = selectorMap.get(selector._id) || 0;
+        selectorMap.set(selector._id, existing + selector.count);
+      });
+      
+      // Combine trends data
+      stats.registrationTrends.forEach(trend => {
+        const existing = trendsMap.get(trend.date) || 0;
+        trendsMap.set(trend.date, existing + trend.count);
+      });
+    });
+
+    // Convert maps back to arrays and sort
+    combined.statistics.topCompanies = Array.from(companyMap.entries())
+      .map(([name, count]) => ({ _id: name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    combined.statistics.topEvents = Array.from(eventMap.entries())
+      .map(([name, count]) => ({ _id: name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    combined.statistics.topSelectors = Array.from(selectorMap.entries())
+      .map(([name, count]) => ({ _id: name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    combined.statistics.registrationTrends = Array.from(trendsMap.entries())
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    return combined;
+  };
+
+  const handleEventChange = (selectedOptions) => {
+    setSelectedEvents(selectedOptions || []);
+  };
+
+  // Custom styles for react-select
+  const customSelectStyles = {
+    control: (provided) => ({
+      ...provided,
+      minHeight: '42px',
+      border: '1px solid #d1d5db',
+      borderRadius: '0.5rem',
+      boxShadow: 'none',
+      '&:hover': {
+        border: '1px solid #d1d5db'
+      },
+      '&:focus-within': {
+        border: '2px solid #3b82f6',
+        boxShadow: '0 0 0 1px #3b82f6'
+      }
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      backgroundColor: '#eff6ff',
+      borderRadius: '0.375rem'
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      color: '#1e40af'
+    }),
+    multiValueRemove: (provided) => ({
+      ...provided,
+      color: '#6b7280',
+      '&:hover': {
+        backgroundColor: '#dc2626',
+        color: 'white'
+      }
+    })
   };
 
   if (loading) {
@@ -83,7 +257,8 @@ const DashboardStats = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard Analytics</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-4 items-center">
+          {/* Time Range Selector */}
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
@@ -93,8 +268,52 @@ const DashboardStats = () => {
             <option value="week">Last Week</option>
             <option value="month">Last Month</option>
           </select>
+
+          {/* Event Multiselect */}
+          <div className="min-w-[300px]">
+            <Select
+              isMulti
+              value={selectedEvents}
+              onChange={handleEventChange}
+              options={eventOptions}
+              isLoading={eventsLoading}
+              placeholder="Select events to filter..."
+              className="react-select-container"
+              classNamePrefix="react-select"
+              styles={customSelectStyles}
+              isClearable
+              isSearchable
+              closeMenuOnSelect={false}
+              hideSelectedOptions={false}
+              components={{
+                IndicatorSeparator: () => null
+              }}
+            />
+          </div>
         </div>
       </div>
+
+      {/* Selected Events Display */}
+      {selectedEvents.length > 0 && (
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-blue-900">Filtered by events:</span>
+            <div className="flex flex-wrap gap-1">
+              {selectedEvents.map((event, index) => (
+                <span key={event.value} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  {event.label}
+                </span>
+              ))}
+            </div>
+            <button
+              onClick={() => setSelectedEvents([])}
+              className="text-xs text-blue-600 hover:text-blue-800 underline ml-2"
+            >
+              Clear all
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

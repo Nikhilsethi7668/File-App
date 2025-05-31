@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import { UserCollection } from "../model/filedata.model.js";
+import { Events } from "../model/event.model.js";
 
 export const getDashboardData = async (req, res) => {
   try {
@@ -19,7 +21,7 @@ export const getDashboardData = async (req, res) => {
     // Base match conditions - include event filter if eventId is provided
     const baseMatch = { ...dateFilter };
     if (eventId) {
-      baseMatch.event = mongoose.Types.ObjectId(eventId);
+      baseMatch.event = mongoose.Types.ObjectId.createFromHexString(eventId);
     }
 
     // 1. Get Overall Statistics

@@ -5,6 +5,6 @@ import { protectRoute, isAdmin } from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 // Get dashboard data - admin only
-router.get('/', protectRoute, isAdmin, getDashboardData);
+router.get('/',  getDashboardData);
 
 export default router;

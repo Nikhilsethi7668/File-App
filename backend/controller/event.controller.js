@@ -6,7 +6,8 @@ import { User } from "../model/auth.model.js";
 export const createEvent = async (req, res) => {
   try {
     const { title, image, description, assignedTo,slotGap, createdBy,startDate,endDate } = req.body;
-    
+    console.log("startndate",startDate);
+    console.log("assigned To",assignedTo);
     // Validate required fields
     if (!title || !assignedTo || !createdBy) {
       return res.status(400).json({ error: "Title, assignedTo, and createdBy are required" });
