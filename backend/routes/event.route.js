@@ -12,8 +12,8 @@ router.post('/', createEvent);
 router.get('/',protectRoute, getAllEvents);
 
 // Get a single event by ID
-router.get('/:id', getEventById);
 router.get('/event-list', getEventTitleList);
+router.get('/:id', getEventById);
 
 // Delete an event by ID
 router.delete('/:id', deleteEvent);
