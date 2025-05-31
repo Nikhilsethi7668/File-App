@@ -1,12 +1,12 @@
 import express from 'express';
-import { createEvent, deleteEvent, getAllEvents, getEventById, getEventTitleList, updateEvent } from '../controller/event.controller.js';
+import { createEvent, deleteEvent, getAllEvents, getEventById, getEventTitleList, updateEvent, uploadEventImage } from '../controller/event.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
 
 
 const router = express.Router();
 
 // Create a new event
-router.post('/', createEvent);
+router.post('/',uploadEventImage, createEvent);
 
 // Get all events
 router.get('/',protectRoute, getAllEvents);

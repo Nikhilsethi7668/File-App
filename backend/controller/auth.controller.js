@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { generateTokenAndCookie } from "../utils/generateToken.js";
 import { Events } from "../model/event.model.js";
+import mongoose from "mongoose";
 
 export const signup = async (req, res) => {
   const { username, email, password, role, eventId } = req.body;

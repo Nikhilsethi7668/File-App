@@ -2,7 +2,7 @@ import express, { urlencoded } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-
+import path from "path"
 // All connections here
 import connectDb from "./lib/db.js";
 
@@ -12,7 +12,10 @@ import eventRoutes from "./routes/event.route.js";
 import authRoutes from "./routes/auth.routes.js";
 import slotRoutes from "./routes/slot.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8493;
@@ -35,6 +38,7 @@ app.use("/api/files", fileRoutes);
 app.use("/api/events",eventRoutes); 
 app.use("/api", slotRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 // app.use("/api/admin", adminRoutes);
 
 app.listen(PORT, async () => {

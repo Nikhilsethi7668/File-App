@@ -3,19 +3,62 @@ import { Events } from "../model/event.model.js";
 import { User } from "../model/auth.model.js";
 
 // Create a new event
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'public/uploads/events';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `event-${uniqueSuffix}${ext}`);
+  }
+});
+
+// File filter to accept only images
+const fileFilter = (req, file, cb) => {
+  const filetypes = /jpeg|jpg|png|gif/;
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = filetypes.test(file.mimetype);
+
+  if (extname && mimetype) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed!'));
+  }
+};
+
+export const uploadEventImage = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }
+}).single('image');
+
 export const createEvent = async (req, res) => {
   try {
-    const { title, image, description, assignedTo,slotGap, createdBy,startDate,endDate } = req.body;
-    console.log("startndate",startDate);
-    console.log("assigned To",assignedTo);
-    // Validate required fields
+    const { title, description, assignedTo, slotGap, createdBy, startDate, endDate } = req.body;
     if (!title || !assignedTo || !createdBy) {
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
       return res.status(400).json({ error: "Title, assignedTo, and createdBy are required" });
+    }
+
+    let imagePath = '';
+    if (req.file) {
+      imagePath = `/uploads/events/${req.file.filename}`;
     }
 
     const newEvent = new Events({
       title,
-      image,
+      image: imagePath,
       description,
       assignedTo,
       createdBy,
@@ -28,6 +71,10 @@ export const createEvent = async (req, res) => {
     return res.status(201).json(savedEvent);
   } catch (error) {
     console.error("Error creating event:", error);
+    // Delete uploaded file if error occurs
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
     return res.status(500).json({
       error: "Internal Server Error",
       details: error.message,
