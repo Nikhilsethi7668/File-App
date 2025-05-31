@@ -1,17 +1,11 @@
 import { User } from "../model/auth.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
 import { generateTokenAndCookie } from "../utils/generateToken.js";
-//import { sendVerificationEmail } from "../mailtrap/email.js";
-// import { sendWelcomeEmail } from "../mailtrap/email.js";
-// import { sendPasswordResetEmail } from "../mailtrap/email.js";
-// import { sendResetSuccessEmail } from "../mailtrap/email.js";
+import { Events } from "../model/event.model.js";
 
 export const signup = async (req, res) => {
-  const { username, email, password, role } = req.body;
-  console.log("Signup attempt:", { username, email, role });
-
+  const { username, email, password, role, eventId } = req.body;
   try {
     // Validation
     if (!username || !email || !password) {
@@ -41,20 +35,33 @@ export const signup = async (req, res) => {
         message: "Username already taken",
       });
     }
-
-    // Create new user
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const newUser = await User.create({
       username,
       email,
       password: hashedPassword,
-      role: role || "viewer", // Default to viewer if not specified
-      lastLogin: new Date() // Set initial login time
+      role: role || "viewer", 
+      lastLogin: new Date()
     });
 
-    // Generate auth token
-    generateTokenAndCookie(res, newUser._id);
+    // If eventId is provided, add user to event's assignedTo
+    if (eventId) {
+      if (!mongoose.Types.ObjectId.isValid(eventId)) {
+        throw new Error("Invalid event ID format");
+      }
+
+      const event = await Events.findById(eventId);
+      if (!event) {
+        throw new Error("Event not found");
+      }
+
+      // Add user to event's assignedTo array if not already present
+      if (!event.assignedTo.includes(newUser._id)) {
+        event.assignedTo.push(newUser._id);
+        await event.save();
+      }
+    }
 
     // Return response without sensitive data
     const { password: _, ...userWithoutPassword } = newUser._doc;
@@ -62,7 +69,8 @@ export const signup = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "User registered successfully",
-      user: userWithoutPassword
+      user: userWithoutPassword,
+      eventAssigned: !!eventId // Indicates if user was assigned to an event
     });
 
   } catch (error) {

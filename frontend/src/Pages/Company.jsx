@@ -7,16 +7,21 @@ const Company = () => {
     const { id } = useParams(); 
     const { fileUserData, getUniqueCompanies,refetch } = useContext(DataContext);
     const [users, setUsers] = useState([]);
-    const [selectedCompany, setSelectedCompany] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [updatingId, setUpdatingId] = useState(null);
     const [error, setError] = useState(null);
     const [count, setCount] = useState(0);
     const [companies, setCompanies] = useState([]);
+    const [selectedCompany, setSelectedCompany] = useState();
 
     useEffect(() => {
         setCompanies(getUniqueCompanies());
     }, [fileUserData]);
+
+    useEffect(() => {
+        setSelectedCompany(companies?.at(0))
+        fetchUsers(companies?.at(0))
+    }, [companies]);
 
         useEffect(() => {
             if (id) {
