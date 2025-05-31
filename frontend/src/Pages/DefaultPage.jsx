@@ -193,10 +193,10 @@ const DefaultPage = () => {
                   className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer h-full flex flex-col"
                   onClick={() => navigate(`/event/${event._id}`)}
                 >
-                  {event.image && (
+                  {(
                     <div className="h-48 overflow-hidden relative">
                       <img
-                        src={event.image}
+                        src={event.image || "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg"}
                         alt={event.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />

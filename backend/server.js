@@ -35,7 +35,7 @@ app.use(cookieParser());
 // All routes here
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
-app.use("/api/events",eventRoutes);
+app.use("/api/events",eventRoutes); 
 app.use("/api", slotRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
