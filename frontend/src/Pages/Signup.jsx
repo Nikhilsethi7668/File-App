@@ -23,18 +23,19 @@ const validationSchema = Yup.object({
         .required('Role is required')
 });
 
-const SignUp = () => {
+const SignUp = ({ eventId, onSuccess }) => {
     const { signup } = useContext(UserContext);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const submission = async (data) => {
         setIsSubmitting(true);
         const { confirmPassword, ...signupData } = data;
-        console.log('Submitting:', signupData);
-
+        
         try {
-            await signup(signupData);
-            alert('Registration Successful!');
+            // Include eventId in the signup data if provided
+            await signup(eventId ? { ...signupData, eventId } : signupData);
+            alert('Assigned Successfully!');
+            if (onSuccess) onSuccess();
         } catch (error) {
             alert(error.response?.data?.message || 'Registration failed');
         } finally {

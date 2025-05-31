@@ -2,8 +2,9 @@ import React, { useState, useEffect, useContext } from "react";
 import UserCard from "../Components/UserCard";
 import DataContext from "../Context/DataContext";
 import Axios from "../Api/Axios";
-import { FiUpload, FiSearch, FiUsers, FiClock, FiTrash2, FiX, FiCheck } from "react-icons/fi";
+import { FiUpload, FiSearch, FiUsers, FiClock, FiTrash2, FiX, FiCheck, FiPlus } from "react-icons/fi";
 import { useParams } from 'react-router-dom';
+import SignUp from "./Signup";
 
 const FileUpload = () => {
   const { id } = useParams();  
@@ -13,7 +14,7 @@ const FileUpload = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { fileUserData, isLoading, refetch } = useContext(DataContext);
-
+ const [showSignupModal, setShowSignupModal] = useState(false);
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       setFile(e.target.files[0]);
@@ -110,16 +111,46 @@ const FileUpload = () => {
             </p>
           </div>
           
-          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
-            <div className="bg-blue-100 p-2 rounded-full">
-              <FiUsers className="text-blue-600" />
+         <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <FiUsers className="text-blue-600" />
+              </div>
+              <span className="font-medium text-gray-700">
+                {data.length} {data.length === 1 ? 'Attendee' : 'Attendees'}
+              </span>
             </div>
-            <span className="font-medium text-gray-700">
-              {data.length} {data.length === 1 ? 'Attendee' : 'Attendees'}
-            </span>
+            
+            <button 
+              onClick={() => setShowSignupModal(true)}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full shadow-sm transition-colors"
+            >
+              <FiPlus />
+              Assign User
+            </button>
           </div>
         </div>
-
+{showSignupModal && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl overflow-clip w-full max-w-md relative max-h-[90vh] overflow-y-auto">
+              <button 
+                onClick={() => setShowSignupModal(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              >
+                <FiX size={24} />
+              </button>
+              
+              {/* Pass eventId to SignUp component */}
+              <SignUp 
+                eventId={id} 
+                onSuccess={() => {
+                  setShowSignupModal(false);
+                  refetch(id); 
+                }} 
+              />
+            </div>
+          </div>
+        )}
         {/* File Upload Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
           <div className="p-6">
