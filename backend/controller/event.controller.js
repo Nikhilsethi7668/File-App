@@ -5,7 +5,7 @@ import { User } from "../model/auth.model.js";
 // Create a new event
 export const createEvent = async (req, res) => {
   try {
-    const { title, image, description, assignedTo, createdBy,startDate,endDate } = req.body;
+    const { title, image, description, assignedTo,slotGap, createdBy,startDate,endDate } = req.body;
     
     // Validate required fields
     if (!title || !assignedTo || !createdBy) {
@@ -18,6 +18,7 @@ export const createEvent = async (req, res) => {
       description,
       assignedTo,
       createdBy,
+      slotGap,
       startDate,
       endDate
     });
@@ -73,7 +74,11 @@ export const getEventById = async (req, res) => {
     }
 
     const event = await Events.findById(id)
-      .populate('assignedTo', 'username email')
+      .populate({
+        path: 'assignedTo',
+        select: 'username email',  // Only include these fields
+        options: { sort: { username: 1 } }  // Optional: sort assigned users
+      })
       .populate('createdBy', 'username email');
 
     if (!event) {

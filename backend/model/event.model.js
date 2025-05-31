@@ -12,15 +12,19 @@ const eventSchema = new mongoose.Schema(
     description: {
       type: String,
     },
-    assignedTo: {
+   assignedTo: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    },
+    }],
     createdBy:{
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+     slotGap: {
+      type: Number,
+      required:true
     },
      startDate: {
       type: String,

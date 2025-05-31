@@ -159,7 +159,7 @@ export const login = async (req, res) => {
 };
 export const usersList = async (req, res) => {
   try {
-    const users = await User.find({}).select('username email');
+    const users = await User.find({}).select('username email role');
     if (!users) {
       return res.status(400).json({
         success: false,
