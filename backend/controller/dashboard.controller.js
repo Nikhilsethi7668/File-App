@@ -1,10 +1,8 @@
 import { UserCollection } from "../model/filedata.model.js";
-import { Events } from "../model/event.model.js";
-import mongoose from "mongoose";
 
 export const getDashboardData = async (req, res) => {
   try {
-    const { timeRange } = req.query; // 'week', 'month', or undefined for all time
+    const { timeRange, eventId } = req.query; // 'week', 'month', or undefined for all time
 
     // Calculate date ranges based on timeRange parameter
     let dateFilter = {};
@@ -18,8 +16,11 @@ export const getDashboardData = async (req, res) => {
       dateFilter = { createdAt: { $gte: oneMonthAgo } };
     }
 
-    // Base match conditions
+    // Base match conditions - include event filter if eventId is provided
     const baseMatch = { ...dateFilter };
+    if (eventId) {
+      baseMatch.event = mongoose.Types.ObjectId(eventId);
+    }
 
     // 1. Get Overall Statistics
     const userStats = await UserCollection.aggregate([
@@ -77,28 +78,41 @@ export const getDashboardData = async (req, res) => {
       { $limit: 5 },
     ]);
 
-    // 3. Get Event-wise Distribution
-    const eventStats = await UserCollection.aggregate([
-      { $match: baseMatch },
-      {
-        $lookup: {
-          from: "events",
-          localField: "event",
-          foreignField: "_id",
-          as: "eventDetails"
-        }
-      },
-      { $unwind: "$eventDetails" },
-      {
-        $group: {
-          _id: "$eventDetails.title",
-          count: { $sum: 1 },
-          eventId: { $first: "$eventDetails._id" }
-        }
-      },
-      { $sort: { count: -1 } },
-      { $limit: 5 }
-    ]);
+    // 3. Get Event-wise Distribution (only if no specific eventId was requested)
+    let eventStats = [];
+    if (!eventId) {
+      eventStats = await UserCollection.aggregate([
+        { $match: baseMatch },
+        {
+          $lookup: {
+            from: "events",
+            localField: "event",
+            foreignField: "_id",
+            as: "eventDetails"
+          }
+        },
+        { $unwind: "$eventDetails" },
+        {
+          $group: {
+            _id: "$eventDetails.title",
+            count: { $sum: 1 },
+            eventId: { $first: "$eventDetails._id" }
+          }
+        },
+        { $sort: { count: -1 } },
+        { $limit: 5 }
+      ]);
+    } else {
+      // If eventId is provided, get details for that specific event
+      const eventDetails = await Events.findById(eventId);
+      if (eventDetails) {
+        eventStats = [{
+          _id: eventDetails.title,
+          count: userStats[0]?.totalUsers || 0,
+          eventId: eventDetails._id
+        }];
+      }
+    }
 
     // 4. Get Time-based registration data for graphs
     const registrationTrends = await UserCollection.aggregate([
@@ -151,7 +165,8 @@ export const getDashboardData = async (req, res) => {
         topSelectors: selectionStats,
         registrationTrends: registrationTrends,
       },
-      timeRange: timeRange || 'all'
+      timeRange: timeRange || 'all',
+      eventFilter: eventId || 'all'
     };
 
     return res.status(200).json({

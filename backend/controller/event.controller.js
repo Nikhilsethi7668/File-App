@@ -127,3 +127,28 @@ export const updateEvent = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };
+
+export const getEventTitleList = async (req, res) => {
+  try {
+    // Get all events with just title and _id fields
+    const events = await Events.find({}, { title: 1 }).sort({ title: 1 });
+
+    // Transform the data to a simpler format if needed
+    const eventList = events.map(event => ({
+      id: event._id,
+      title: event.title
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: eventList
+    });
+  } catch (error) {
+    console.error("Error fetching event titles:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+      details: error.message
+    });
+  }
+};
