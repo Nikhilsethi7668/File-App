@@ -94,11 +94,9 @@ const UserProvider = ({ children }) => {
     const signup = async (userData) => {
         setLoading(true);
         try {
-            console.log("userData", userData);
             const response = await signupService(userData);
             setUser(response.data.user);
             // setIsAuthenticated(true);
-            alert("Signed up successfully")
         } catch (error) {
             console.error("Signup failed:", error.message);
             setError("Signup failed. Please try again.");

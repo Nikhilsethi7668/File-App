@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Formik, Form, Field } from 'formik';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { UserContext } from '../Context/UserContext';
 
@@ -25,21 +25,20 @@ const validationSchema = Yup.object({
 
 const SignUp = ({ eventId, onSuccess }) => {
     const { signup } = useContext(UserContext);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
 
-    const submission = async (data) => {
-        setIsSubmitting(true);
-        const { confirmPassword, ...signupData } = data;
-        
+    const handleSubmit = async (values, { setSubmitting, resetForm }) => {
         try {
-            // Include eventId in the signup data if provided
+            const { confirmPassword, ...signupData } = values;
             await signup(eventId ? { ...signupData, eventId } : signupData);
-            alert('Assigned Successfully!');
+            setErrorMessage(null);
             if (onSuccess) onSuccess();
+            resetForm(); // Only reset form on success
         } catch (error) {
-            alert(error.response?.data?.message || 'Registration failed');
+            console.error("Signup error:", error);
+            setErrorMessage(error.response?.data?.message || 'Registration failed');
         } finally {
-            setIsSubmitting(false);
+            setSubmitting(false);
         }
     };
 
@@ -56,6 +55,21 @@ const SignUp = ({ eventId, onSuccess }) => {
                 <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">Create Account</h2>
                 <p className="text-gray-500 text-center mb-8">Join us to get started</p>
                 
+                {errorMessage && (
+                    <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-sm text-red-700">{errorMessage}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <Formik
                     initialValues={{ 
                         username: '', 
@@ -65,10 +79,10 @@ const SignUp = ({ eventId, onSuccess }) => {
                         role: 'viewer' 
                     }}
                     validationSchema={validationSchema}
-                    onSubmit={submission}
+                    onSubmit={handleSubmit}
                 >
-                    {({ errors, touched }) => (
-                        <Form className="space-y-5">
+                    {({ isSubmitting, errors, touched }) => (
+                        <Form className="space-y-5" noValidate>
                             <div>
                                 <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
                                 <Field 
@@ -78,9 +92,7 @@ const SignUp = ({ eventId, onSuccess }) => {
                                     placeholder="Enter your username" 
                                     className={`mt-1 block w-full px-4 py-3 rounded-lg border ${errors.username && touched.username ? 'border-red-300' : 'border-gray-300'} focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition duration-200`} 
                                 />
-                                {errors.username && touched.username && (
-                                    <p className="text-red-500 text-xs mt-1">{errors.username}</p>
-                                )}
+                                <ErrorMessage name="username" component="div" className="text-red-500 text-xs mt-1" />
                             </div>
                             
                             <div>
@@ -92,9 +104,7 @@ const SignUp = ({ eventId, onSuccess }) => {
                                     placeholder="your@email.com" 
                                     className={`mt-1 block w-full px-4 py-3 rounded-lg border ${errors.email && touched.email ? 'border-red-300' : 'border-gray-300'} focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition duration-200`} 
                                 />
-                                {errors.email && touched.email && (
-                                    <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                                )}
+                                <ErrorMessage name="email" component="div" className="text-red-500 text-xs mt-1" />
                             </div>
                             
                             <div>
@@ -106,9 +116,7 @@ const SignUp = ({ eventId, onSuccess }) => {
                                     placeholder="••••••••" 
                                     className={`mt-1 block w-full px-4 py-3 rounded-lg border ${errors.password && touched.password ? 'border-red-300' : 'border-gray-300'} focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition duration-200`} 
                                 />
-                                {errors.password && touched.password && (
-                                    <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-                                )}
+                                <ErrorMessage name="password" component="div" className="text-red-500 text-xs mt-1" />
                             </div>
                             
                             <div>
@@ -120,9 +128,7 @@ const SignUp = ({ eventId, onSuccess }) => {
                                     placeholder="••••••••" 
                                     className={`mt-1 block w-full px-4 py-3 rounded-lg border ${errors.confirmPassword && touched.confirmPassword ? 'border-red-300' : 'border-gray-300'} focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition duration-200`} 
                                 />
-                                {errors.confirmPassword && touched.confirmPassword && (
-                                    <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>
-                                )}
+                                <ErrorMessage name="confirmPassword" component="div" className="text-red-500 text-xs mt-1" />
                             </div>
                             
                             <div>
@@ -137,9 +143,7 @@ const SignUp = ({ eventId, onSuccess }) => {
                                     <option value="manager">Manager</option>
                                     <option value="admin">Admin</option>
                                 </Field>
-                                {errors.role && touched.role && (
-                                    <p className="text-red-500 text-xs mt-1">{errors.role}</p>
-                                )}
+                                <ErrorMessage name="role" component="div" className="text-red-500 text-xs mt-1" />
                             </div>
                             
                             <button 

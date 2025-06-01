@@ -4,7 +4,7 @@ import DataContext from "../Context/DataContext";
 import Axios from "../Api/Axios";
 import { FiUpload, FiSearch, FiUsers, FiClock, FiTrash2, FiX, FiCheck, FiPlus } from "react-icons/fi";
 import { useParams } from 'react-router-dom';
-import SignUp from "./Signup";
+import SignUp2 from "./Signup2";
 
 const FileUpload = () => {
   const { id } = useParams();  
@@ -141,7 +141,7 @@ const FileUpload = () => {
               </button>
               
               {/* Pass eventId to SignUp component */}
-              <SignUp 
+              <SignUp2 
                 eventId={id} 
                 onSuccess={() => {
                   setShowSignupModal(false);

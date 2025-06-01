@@ -2,6 +2,19 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Axios from "../Api/Axios";
 
+const formatDateTime = (dateString) => {
+  if (!dateString) return "N/A";
+  
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', {
+    weekday: 'short', // Adds day of week (e.g., "Thu")
+    month: 'long',    // Full month name (e.g., "June")
+    day: 'numeric',   // Day of month (e.g., "12")
+    hour: '2-digit',  // 2-digit hour (e.g., "06")
+    minute: '2-digit',// 2-digit minute (e.g., "06")
+    hour12: true      // 12-hour format with AM/PM
+  });
+};
 const EventDetail = () => {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
@@ -27,10 +40,10 @@ const EventDetail = () => {
       {event.image && <img src={event.image} alt={event.title} className="mb-4 rounded" />}
       <p className="mb-2">{event.description}</p>
       <div className="mb-2">
-        <span className="font-medium">Start:</span> {event.startDate ? new Date(event.startDate).toLocaleDateString() : "N/A"}
+        <span className="font-medium">Start:</span> {event.startDate ? formatDateTime(event.startDate) : "N/A"}
       </div>
       <div className="mb-2">
-        <span className="font-medium">End:</span> {event.endDate ? new Date(event.endDate).toLocaleDateString() : "N/A"}
+        <span className="font-medium">End:</span> {event.endDate ?formatDateTime(event.startDate): "N/A"}
       </div>
       <div>
         <span className="font-medium">Assigned To:</span> {event.assignedTo?.username || "N/A"}
