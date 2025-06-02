@@ -211,7 +211,7 @@ const DefaultPage = () => {
                   {(
                     <div className="h-48 w-full overflow-hidden relative">
                       <img
-                        src={"http://localhost:8493"+event.image || "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg"}
+                        src={event.image?"http://localhost:8493"+event.image : "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg"}
                         alt={event.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
