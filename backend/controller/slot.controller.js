@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Slots } from "../model/Slots.js";
 
 export const deleteSlot = async (req, res) => {
@@ -90,6 +91,42 @@ export const getAllBookedSlots = async (req, res) => {
     res.json(slots);
   } catch (error) {
     console.error("Error fetching all booked slots:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getCompanySlotCounts = async (req, res) => {
+  try {
+    const { event } = req.body;
+
+    if (!event) {
+      return res.status(400).json({ error: "Event id is required" });
+    }
+
+    // Aggregate to get unique companies with their slot counts
+    const companyCounts = await Slots.aggregate([
+      { $match: { event: new mongoose.Types.ObjectId(event) } },
+      {
+        $group: {
+          _id: "$company",
+          slotCount: { $sum: 1 },
+          // You can include other aggregations if needed, like:
+          // completedSlots: { $sum: { $cond: [{ $eq: ["$completed", true] }, 1, 0] } }
+        }
+      },
+      { $sort: { slotCount: -1 } }, // Sort by slot count descending
+      {
+        $project: {
+          _id: 0,
+          company: "$_id",
+          slotCount: 1
+        }
+      }
+    ]);
+
+    res.json(companyCounts);
+  } catch (error) {
+    console.error("Error fetching company slot counts:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };

@@ -18,65 +18,56 @@ const UpdateEvent = () => {
     description: "",
     startDate: "",
     endDate: "",
-    assignedTo: [], // Changed to array for multi-select
-    slotGap: "", // Added slotGap field
+    assignedTo: [],
+    slotGap: "",
   });
 
   const currentUserId = localStorage.getItem("userId");
 
-  // Fetch users list
-  useEffect(() => {
-    Axios.post("/auth/users-list")
-      .then(res => {
-        console.log("Users List Response:", res.data);
-        setUsers(res.data.users || []);
-      })
-      .catch((err) => {
-        console.error("Users List Error:", err);
-        setUsers([]);
+ useEffect(() => {
+  const fetchData = async () => {
+    try {
+      // First fetch users list (if still needed for other purposes)
+      const usersResponse = await Axios.post("/auth/users-list");
+      const usersData = usersResponse.data.users || [];
+      setUsers(usersData);
+      
+      // Then fetch event details
+      const eventResponse = await Axios.get(`/events/${id}`);
+      const eventData = eventResponse.data;
+      setEvent(eventData);
+      
+      // Transform assignedTo array (which contains full user objects) to react-select format
+      const assignedToOptions = eventData.assignedTo?.map(user => ({
+        value: user._id,
+        label: `${user.username} (${user.email})`
+      })) || [];
+
+      setForm({
+        title: eventData.title || "",
+        image: eventData.image || "",
+        description: eventData.description || "",
+        startDate: eventData.startDate ? eventData.startDate.slice(0, 16) : "",
+        endDate: eventData.endDate ? eventData.endDate.slice(0, 16) : "",
+        assignedTo: assignedToOptions,
+        slotGap: eventData.slotGap || "",
       });
-  }, []);
+    } catch (err) {
+      setError("Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Fetch event details
-  useEffect(() => {
-    Axios.get(`/events/${id}`)
-      .then(res => {
-        const eventData = res.data;
-        setEvent(eventData);
-        
-        // Transform assignedTo array to match react-select format
-        const assignedToOptions = eventData.assignedTo?.map(userId => {
-          const user = users.find(u => u._id === userId);
-          return user ? {
-            value: user._id,
-            label: `${user.username} (${user.email})`
-          } : null;
-        }).filter(Boolean) || [];
+  fetchData();
+}, [id]);
 
-        setForm({
-          title: eventData.title || "",
-          image: eventData.image || "",
-          description: eventData.description || "",
-          startDate: eventData.startDate ? eventData.startDate.slice(0, 16) : "", // datetime-local format
-          endDate: eventData.endDate ? eventData.endDate.slice(0, 16) : "", // datetime-local format
-          assignedTo: assignedToOptions,
-          slotGap: eventData.slotGap || "",
-        });
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Failed to load event");
-        setLoading(false);
-      });
-  }, [id, users]);
-
-  // Transform users data for react-select
+  // Rest of your component remains the same...
   const userOptions = users.map(user => ({
     value: user._id,
     label: `${user.username} (${user.email})`
   }));
 
-  // Slot gap options
   const slotGapOptions = [
     { value: 15, label: '15 min' },
     { value: 20, label: '20 min' },
@@ -87,7 +78,6 @@ const UpdateEvent = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Handle multi-select change
   const handleAssignedToChange = (selectedOptions) => {
     setForm({ ...form, assignedTo: selectedOptions || [] });
   };
@@ -104,7 +94,6 @@ const UpdateEvent = () => {
     }
 
     try {
-      // Extract user IDs from selected options
       const assignedUserIds = form.assignedTo.map(option => option.value);
       
       const updateData = {
@@ -113,8 +102,8 @@ const UpdateEvent = () => {
         description: form.description,
         startDate: form.startDate,
         endDate: form.endDate,
-        assignedTo: assignedUserIds, // Send array of user IDs
-        slotGap: parseInt(form.slotGap) || null, // Send slot gap as number
+        assignedTo: assignedUserIds,
+        slotGap: parseInt(form.slotGap) || null,
       };
 
       await Axios.put(`/events/${id}`, updateData);
@@ -160,6 +149,7 @@ const UpdateEvent = () => {
 
   if (loading) return <div className="max-w-2xl mx-auto py-12 px-4 text-center">Loading...</div>;
   if (!event) return <div className="max-w-2xl mx-auto py-12 px-4 text-center">Event not found</div>;
+console.log(event);
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -200,7 +190,7 @@ const UpdateEvent = () => {
           />
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <div className="flex-1">
             <label className="block font-medium mb-1">Start Date</label>
             <input
