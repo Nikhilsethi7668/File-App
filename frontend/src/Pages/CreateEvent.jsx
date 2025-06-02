@@ -54,7 +54,7 @@ const CreateEvent = () => {
     // Transform users data for react-select
     const userOptions = users.map(user => ({
         value: user._id,
-        label: `${user.username} (${user.email})`
+        label: `${user.username} (${user.email}), Role: ${user?.role}`
     }));
 
     const slotGapOptions = [

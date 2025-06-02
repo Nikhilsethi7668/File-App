@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Axios from "../Api/Axios";
 import { FiCalendar, FiClock, FiMapPin, FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { motion } from "framer-motion";
+import { useContext } from "react";
+import { UserContext } from "../Context/UserContext";
 
 const formatDateTime = (dateString) => {
   if (!dateString) return "N/A";
@@ -18,6 +20,7 @@ const formatDateTime = (dateString) => {
 };
 const DefaultPage = () => {
   const navigate = useNavigate();
+  const {user}=useContext(UserContext)
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -86,7 +89,7 @@ const DefaultPage = () => {
                 Find and join exciting events happening around you or create your own
               </p>
             </div>
-            <motion.button
+            {user.role==="admin"&&<motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate("/create")}
@@ -94,7 +97,7 @@ const DefaultPage = () => {
             >
               <FiPlus className="text-lg" />
               Create Event
-            </motion.button>
+            </motion.button>}
           </div>
         </div>
       </div>
@@ -219,7 +222,7 @@ const DefaultPage = () => {
                     <div className="flex justify-between items-start mb-3">
                       <h3 className="text-xl font-bold text-gray-900 line-clamp-1">{event.title}</h3>
                       <div className="flex space-x-2">
-                        <button
+                        {user.role!=="viewer"&&<button
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/event/update/${event._id}`);
@@ -228,8 +231,8 @@ const DefaultPage = () => {
                           title="Edit event"
                         >
                           <FiEdit2 size={18} />
-                        </button>
-                        <button
+                        </button>}
+                       {user.role!=="viewer"&&<button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDelete(event._id);
@@ -238,7 +241,7 @@ const DefaultPage = () => {
                           title="Delete event"
                         >
                           <FiTrash2 size={18} />
-                        </button>
+                        </button>}
                       </div>
                     </div>
                     <p className="text-gray-600 mb-4 line-clamp-2">{event.description || "No description provided"}</p>

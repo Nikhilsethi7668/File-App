@@ -5,6 +5,7 @@ import Axios from "../Api/Axios";
 import { FiUpload, FiSearch, FiUsers, FiClock, FiTrash2, FiX, FiCheck, FiPlus } from "react-icons/fi";
 import { useParams } from 'react-router-dom';
 import SignUp2 from "./Signup2";
+import { UserContext } from "../Context/UserContext";
 
 const FileUpload = () => {
   const { id } = useParams();  
@@ -15,6 +16,8 @@ const FileUpload = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { fileUserData, isLoading, refetch } = useContext(DataContext);
  const [showSignupModal, setShowSignupModal] = useState(false);
+   const {user}=useContext(UserContext)
+ 
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       setFile(e.target.files[0]);
@@ -122,8 +125,9 @@ const FileUpload = () => {
             </div>
             
             <button 
+              disabled={user.role==="viewer"}
               onClick={() => setShowSignupModal(true)}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full shadow-sm transition-colors"
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-4 py-2 rounded-full shadow-sm transition-colors"
             >
               <FiPlus />
               Assign User
@@ -152,11 +156,11 @@ const FileUpload = () => {
           </div>
         )}
         {/* File Upload Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+        {user.role!=="viewer"&&<div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Upload Attendee List</h2>
             
-            <div className="flex flex-col md:flex-row gap-4 items-center">
+           <div className="flex flex-col md:flex-row gap-4 items-center">
               <label className="flex-1 w-full cursor-pointer group">
                 <div className={`flex items-center gap-4 p-4 border-2 border-dashed rounded-lg transition-all 
                   ${file ? 'border-blue-400 bg-blue-50' : 'border-gray-300 group-hover:border-blue-400'}`}>
@@ -208,7 +212,7 @@ const FileUpload = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Search and Actions Bar */}
         <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
@@ -237,8 +241,9 @@ const FileUpload = () => {
             )}
             
             <button 
+             disabled={user.role==="viewer"}
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-2 px-4 py-3 bg-red-50 hover:bg-red-100 rounded-xl text-red-600 transition-colors"
+              className="flex items-center gap-2 px-4 py-3 bg-red-50 hover:bg-red-100 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed text-red-600 transition-colors"
             >
               <FiTrash2 size={16} />
               Delete All

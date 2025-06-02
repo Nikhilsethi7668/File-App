@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import DataContext from "../Context/DataContext";
 import Axios from "../Api/Axios";
 import { useParams } from 'react-router-dom';
+import { UserContext } from "../Context/UserContext";
 
 const Meeting = () => {
     const { id } = useParams(); 
@@ -9,6 +10,7 @@ const Meeting = () => {
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+  const {user:loggedInUser}=useContext(UserContext)
 
     const generateTimeSlots = () => {
         const slots = [];
@@ -79,6 +81,7 @@ const Meeting = () => {
             fetchData(id);
         }
     }, [id]); 
+    
     useEffect(() => {
         if (searchQuery.trim() === "") {
             setFilteredUsers(fileUserData);
@@ -197,15 +200,15 @@ const Meeting = () => {
                                                         >
                                                             {user.slots[slot].company}
                                                         </span>
-                                                        <button
+                                                        {loggedInUser.role!=="viewer"?<button
                                                             onClick={() => deleteSlot(user._id, slot)}
-                                                            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
+                                                            className="text-red-500 disabled:bg-gray-500  disabled:cursor-not-allowed hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
                                                             title="Delete slot"
                                                         >
                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                             </svg>
-                                                        </button>
+                                                        </button>:null}
                                                     </div>
                                                 ) : (
                                                     <span className="text-gray-300">-</span>
