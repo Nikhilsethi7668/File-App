@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { DataContext } from "../Context/DataContext";
 import Axios from "../Api/Axios";
 import { useParams } from 'react-router-dom';
+import { UserContext } from "../Context/UserContext";
 
 const Company = () => {
     const { id } = useParams(); 
@@ -13,6 +14,7 @@ const Company = () => {
     const [count, setCount] = useState(0);
     const [companies, setCompanies] = useState([]);
     const [selectedCompany, setSelectedCompany] = useState();
+  const {user:loggedInUser}=useContext(UserContext)
 
     useEffect(() => {
         setCompanies(getUniqueCompanies());
@@ -197,13 +199,13 @@ const Company = () => {
                                             <div className="flex-shrink-0 sm:w-40">
                                                 <button
                                                     onClick={() => toggleCompletion(user.slotId, user.completed)}
-                                                    className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2
+                                                    className={`w-full px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2
                                                         ${user.completed 
                                                             ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200" 
                                                             : "bg-blue-100 text-blue-800 hover:bg-blue-200"
                                                         }
                                                     `}
-                                                    disabled={updatingId === user.slotId}
+                                                    disabled={updatingId === user.slotId||loggedInUser.role=="viewer"}
                                                 >
                                                     {updatingId === user.slotId ? (
                                                         <>

@@ -3,6 +3,7 @@ import Axios from "../Api/Axios";
 import { CiClock2, CiCalendar, CiUser, CiMail, CiPhone } from "react-icons/ci";
 import { FiBriefcase, FiTag, FiX, FiCheck } from "react-icons/fi";
 import SlotsContext from "../Context/SlotsContext.jsx";
+import { UserContext } from "../Context/UserContext.jsx";
 
 const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, timeSlots = [] }) => {
     const [user, setUser] = useState(initialUser);
@@ -11,6 +12,7 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
     const [selectedTime, setSelectedTime] = useState("");
     const { slots, fetchSlots } = useContext(SlotsContext);
     const [isSubmitting, setIsSubmitting] = useState(false);
+      const {user:loggedInUser}=useContext(UserContext)
 
 
     
@@ -262,8 +264,8 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting || !selectedCompany || !selectedTime}
-                                    className={`w-full sm:w-auto px-4 py-2 rounded-lg text-white transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
+                                    disabled={isSubmitting || !selectedCompany || !selectedTime|| loggedInUser.role==="viewer"}
+                                    className={`w-full sm:w-auto px-4 py-2 rounded-lg text-white disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
                                         isSubmitting || !selectedCompany || !selectedTime
                                             ? "bg-gray-300 cursor-not-allowed"
                                             : "bg-green-500 hover:bg-green-600"
