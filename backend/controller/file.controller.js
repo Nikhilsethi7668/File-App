@@ -124,7 +124,7 @@ export const getFileData = async (req, res) => {
       success: false,
       message: "Event id is required",
     });}
-    const data = await UserCollection.find({event:event});
+    const data = await UserCollection.find({event:event}).populate("event");
     return res.status(200).json({ users: data });
   } catch (error) {
     console.error("Error fetching data:", error);

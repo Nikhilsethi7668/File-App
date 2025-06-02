@@ -14,7 +14,9 @@ const FileUpload = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { fileUserData, isLoading, refetch } = useContext(DataContext);
- const [showSignupModal, setShowSignupModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
+  const [eventData, setEventData] = useState(null);
+
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       setFile(e.target.files[0]);
@@ -64,6 +66,10 @@ const FileUpload = () => {
   useEffect(() => {
     if (fileUserData && Array.isArray(fileUserData)) {
       setData(fileUserData);
+      // Extract event data from the first user if available
+      if (fileUserData.length > 0 && fileUserData[0].event) {
+        setEventData(fileUserData[0].event);
+      }
     }
   }, [fileUserData]);
 
@@ -79,13 +85,34 @@ const FileUpload = () => {
     })
     .sort((a, b) => (b.selectedBy?.length || 0) - (a.selectedBy?.length || 0));
 
-  // Generate time slots from 10:00 to 17:30 in 30-minute intervals
+  // Generate time slots dynamically based on slotGap from event data
   const generateTimeSlots = () => {
-    return Array.from({ length: 16 }, (_, i) => {
-      const hour = 10 + Math.floor(i / 2);
-      const minutes = i % 2 === 0 ? '00' : '30';
-      return hour < 18 ? `${hour}:${minutes}` : null;
-    }).filter(Boolean);
+    // Default to 30 minutes if no event data or slotGap is available
+    const slotGap = eventData?.slotGap || 30;
+    
+    // Calculate total minutes from 10:00 to 17:30 (7.5 hours = 450 minutes)
+    const startTime = 10 * 60; // 10:00 in minutes (600 minutes from midnight)
+    const endTime = 17 * 60 + 30; // 17:30 in minutes (1050 minutes from midnight)
+    const totalMinutes = endTime - startTime; // 450 minutes
+    
+    // Calculate number of slots
+    const numberOfSlots = Math.floor(totalMinutes / slotGap);
+    
+    return Array.from({ length: numberOfSlots }, (_, i) => {
+      const totalMinutesFromStart = startTime + (i * slotGap);
+      const hour = Math.floor(totalMinutesFromStart / 60);
+      const minutes = totalMinutesFromStart % 60;
+      
+      // Format time as HH:MM
+      const formattedHour = hour.toString().padStart(2, '0');
+      const formattedMinutes = minutes.toString().padStart(2, '0');
+      
+      return `${formattedHour}:${formattedMinutes}`;
+    }).filter(time => {
+      // Only include times up to 17:30
+      const [hour, minute] = time.split(':').map(Number);
+      return hour < 17 || (hour === 17 && minute <= 30);
+    });
   };
 
   // Get unique companies from all users
@@ -108,10 +135,15 @@ const FileUpload = () => {
             </h1>
             <p className="text-gray-600 mt-2">
               Manage attendee schedules and meeting slots
+              {eventData?.slotGap && (
+                <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                  {eventData.slotGap} min slots
+                </span>
+              )}
             </p>
           </div>
           
-         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
               <div className="bg-blue-100 p-2 rounded-full">
                 <FiUsers className="text-blue-600" />
@@ -130,7 +162,8 @@ const FileUpload = () => {
             </button>
           </div>
         </div>
-{showSignupModal && (
+
+        {showSignupModal && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-xl overflow-clip w-full max-w-md relative max-h-[90vh] overflow-y-auto">
               <button 
@@ -151,6 +184,7 @@ const FileUpload = () => {
             </div>
           </div>
         )}
+
         {/* File Upload Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
           <div className="p-6">

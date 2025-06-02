@@ -12,9 +12,12 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
     const { slots, fetchSlots } = useContext(SlotsContext);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+
+    
     useEffect(() => {
         setUser(initialUser);
     }, [initialUser]);
+
 
     // Highlight matching text in search results
     const highlightMatch = (text) => {
