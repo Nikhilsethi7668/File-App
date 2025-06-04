@@ -6,30 +6,42 @@ import { UserContext } from "../Context/UserContext";
 
 const Company = () => {
     const { id } = useParams(); 
-    const { fileUserData, getUniqueCompanies,refetch } = useContext(DataContext);
+    const { refetch } = useContext(DataContext);
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [loadingCompanies, setLoadingCompanies] = useState(false);
     const [updatingId, setUpdatingId] = useState(null);
     const [error, setError] = useState(null);
     const [count, setCount] = useState(0);
     const [companies, setCompanies] = useState([]);
     const [selectedCompany, setSelectedCompany] = useState();
-  const {user:loggedInUser}=useContext(UserContext)
+    const {user:loggedInUser}=useContext(UserContext)
 
+    // Fetch companies with slot counts
     useEffect(() => {
-        setCompanies(getUniqueCompanies());
-    }, [fileUserData]);
-
-    useEffect(() => {
-        setSelectedCompany(companies?.at(0))
-        fetchUsers(companies?.at(0))
-    }, [companies]);
-
-        useEffect(() => {
-            if (id) {
-                refetch(id);
+        const fetchCompanies = async () => {
+            setLoadingCompanies(true);
+            try {
+                const response = await Axios.post('/slot/get-company-slot-counts', { event: id });
+                setCompanies(response.data);
+            } catch (error) {
+                console.error("Error fetching companies:", error);
+                setError("Failed to load companies");
+            } finally {
+                setLoadingCompanies(false);
             }
-        }, [id]); 
+        };
+
+        if (id) {
+            fetchCompanies();
+        }
+    }, [id]);
+
+    useEffect(() => {
+        if (id) {
+            refetch(id);
+        }
+    }, [id]); 
 
     const fetchUsers = async (companyName) => {
         const encodedCompanyName = encodeURIComponent(companyName);
@@ -38,11 +50,11 @@ const Company = () => {
         setError(null);
 
         try {
-            const response = await Axios.post(`/slot/company/${encodedCompanyName}`,{event:id});
-            if (!response.status>300) {
+            const response = await Axios.post(`/slot/company/${encodedCompanyName}`, { event: id });
+            if (response.status >= 300) {
                 throw new Error("Failed to fetch users");
             }
-            const slots = await response.data;
+            const slots = response.data;
 
             const uniqueUsersMap = new Map();
             slots.forEach((slot) => {
@@ -66,12 +78,13 @@ const Company = () => {
         }
     };
 
+    // Rest of your component remains the same...
     const toggleCompletion = async (slotId, isCompleted) => {
         setUpdatingId(slotId);
         try {
-            const response = await Axios.post(`/slot/toggle-completed/${slotId}`,{ completed: !isCompleted })
+            const response = await Axios.post(`/slot/toggle-completed/${slotId}`, { completed: !isCompleted })
 
-            if (!response.status>300) throw new Error("Failed to update status");
+            if (response.status >= 300) throw new Error("Failed to update status");
 
             if (selectedCompany) fetchUsers(selectedCompany);
         } catch (error) {
@@ -93,7 +106,11 @@ const Company = () => {
                     </p>
                 </div>
 
-                {companies.length > 0 ? (
+                {loadingCompanies ? (
+                    <div className="flex justify-center py-10">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                ) : companies.length > 0 ? (
                     <div className="mb-12">
                         <h2 className="text-xl font-semibold text-gray-700 mb-4 px-2">
                             Available Companies
@@ -101,17 +118,18 @@ const Company = () => {
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                             {companies.map((company) => (
                                 <button
-                                    key={company}
-                                    onClick={() => fetchUsers(company)}
+                                    key={company.company}
+                                    onClick={() => fetchUsers(company.company)}
                                     className={`p-3 rounded-xl text-base font-medium transition-all duration-300 text-center w-full 
-                                        ${selectedCompany === company 
+                                        ${selectedCompany === company.company 
                                             ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg transform scale-[1.02] ring-2 ring-blue-300" 
                                             : "bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md border border-gray-200"
                                         }
                                         hover:shadow-md hover:-translate-y-0.5
                                     `}
                                 >
-                                    <span className="truncate block">{company}</span>
+                                    <span className="truncate block">{company.company}</span>
+                                    <span className="text-sm opacity-80">{company.slotCount} slot{company.slotCount !== 1 ? 's' : ''}</span>
                                 </button>
                             ))}
                         </div>
@@ -122,7 +140,7 @@ const Company = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
                         </svg>
                         <h3 className="mt-2 text-lg font-medium text-gray-900">No companies available</h3>
-                        <p className="mt-1 text-gray-500">Please upload a file first to view companies</p>
+                        <p className="mt-1 text-gray-500">No companies have booked slots for this event</p>
                     </div>
                 )}
 

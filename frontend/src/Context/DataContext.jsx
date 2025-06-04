@@ -31,23 +31,39 @@ export const DataContextProvider = ({ children }) => {
     };
 
 
-    const getUniqueCompanies = () => {
-        if (!fileUserData) return [];
-        const companies = new Set();
-        fileUserData.forEach((user) => {
-            if (user.selectedBy && user.selectedBy.length > 0) {
-                user.selectedBy.forEach((company) => companies.add(company));
-            }
-        });
-        return Array.from(companies);
-    };
-
+   const getUniqueCompaniesWithUserCounts = () => {
+    if (!fileUserData || !Array.isArray(fileUserData)) return [];
+    
+    // Create a map to store company counts
+    const companyMap = new Map();
+    
+    fileUserData.forEach((user) => {
+        if (user.selectedBy && Array.isArray(user.selectedBy)) {
+            user.selectedBy.forEach((company) => {
+                if (company) {
+                    // Increment count for this company
+                    const currentCount = companyMap.get(company) || 0;
+                    companyMap.set(company, currentCount + 1);
+                }
+            });
+        }
+    });
+    
+    // Convert the map to an array of objects sorted by count (descending)
+    return Array.from(companyMap.entries())
+        .map(([company, count]) => ({
+            company,
+            userCount: count
+        }))
+        .sort((a, b) => b.userCount - a.userCount);
+};
+    
     return (
         <DataContext.Provider 
             value={{ 
                 fileUserData, 
                 setFileUserData, 
-                getUniqueCompanies,
+                getUniqueCompaniesWithUserCounts,
                 isLoading,
                 error,
                 refetch: fetchData
