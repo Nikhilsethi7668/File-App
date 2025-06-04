@@ -13,6 +13,7 @@ const FileUpload = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [eventData, setEventData] = useState();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { fileUserData, isLoading, refetch } = useContext(DataContext);
  const [showSignupModal, setShowSignupModal] = useState(false);
@@ -330,7 +331,7 @@ const FileUpload = () => {
 
         {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Confirm Deletion</h3>

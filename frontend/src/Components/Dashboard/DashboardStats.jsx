@@ -1,12 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Axios from '../../Api/Axios';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { UserContext } from '../../Context/UserContext';
 
 const DashboardStats = () => {
-  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardData, setDashboardData] = useState({
+  statistics: {
+    topCompanies: [],
+    topEvents: [],
+    statusDistribution: {}, 
+    registrationTrends: [],
+    topSelectors: [],
+    totalUsers: 0,
+    totalEvents: 0,
+    giftsCollected: 0
+  }
+});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [timeRange, setTimeRange] = useState('all');
+  const {user}=useContext(UserContext)
   
   // Modified state for single select
   const [eventOptions, setEventOptions] = useState([]);
@@ -33,6 +46,7 @@ const DashboardStats = () => {
           value: event.id,
           label: event.title
         }));
+        setSelectedEvent(options[0].value)
         setEventOptions(options);
       }
     } catch (err) {
@@ -45,7 +59,9 @@ const DashboardStats = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
+      if((user.role!=="admin")&&(!selectedEvent)){
+         return;
+      }
       // Build params object
       const params = {};
       
@@ -93,30 +109,30 @@ const DashboardStats = () => {
   const { statistics } = dashboardData;
 
   // Prepare data for charts
-  const companyChartData = statistics.topCompanies.map((company, index) => ({
+  const companyChartData = statistics?.topCompanies?.map((company, index) => ({
     name: company._id,
     value: company.count,
     fill: COLORS[index % COLORS.length]
   }));
 
-  const eventChartData = statistics.topEvents.map((event, index) => ({
+  const eventChartData = statistics?.topEvents?.map((event, index) => ({
     name: event._id,
     value: event.count,
     fill: COLORS[index % COLORS.length]
   }));
 
-  const statusChartData = Object.entries(statistics.statusDistribution).map(([status, count], index) => ({
+  const statusChartData = Object.entries(statistics?.statusDistribution)?.map(([status, count], index) => ({
     name: status.charAt(0).toUpperCase() + status.slice(1),
     value: count,
     fill: COLORS[index % COLORS.length]
   }));
 
-  const trendData = statistics.registrationTrends.map(trend => ({
+  const trendData = statistics?.registrationTrends?.map(trend => ({
     date: trend.date,
     registrations: trend.count
   }));
 
-  const selectorData = statistics.topSelectors.map((selector, index) => ({
+  const selectorData = statistics?.topSelectors?.map((selector, index) => ({
     name: selector._id,
     count: selector.count,
     fill: COLORS[index % COLORS.length]
@@ -125,7 +141,6 @@ const DashboardStats = () => {
   // Find selected event name for display
   const selectedEventName = eventOptions.find(option => option.value === selectedEvent)?.label;
 
-  console.log("for new build 1");
   return (
     <div className="p-3 sm:p-4 lg:p-6 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -150,7 +165,7 @@ const DashboardStats = () => {
             disabled={eventsLoading}
             className="w-full sm:min-w-[250px] lg:min-w-[300px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
           >
-            <option value="" >All Events</option>
+            {user.role==="admin"&&<option value="" >All Events</option>}
             {eventOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -161,24 +176,6 @@ const DashboardStats = () => {
       </div>
 
       {/* Selected Event Display */}
-      {selectedEvent && (
-        <div className="mb-6 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <span className="text-sm font-medium text-blue-900">Filtered by event:</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                {selectedEventName}
-              </span>
-              <button
-                onClick={() => setSelectedEvent('')}
-                className="text-xs text-blue-600 hover:text-blue-800 underline"
-              >
-                Clear filter
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
@@ -191,24 +188,24 @@ const DashboardStats = () => {
             </div>
             <div className="ml-3 sm:ml-4 min-w-0">
               <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Users</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalUsers}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{statistics?.totalUsers}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 sm:p-3 rounded-full bg-green-100 text-green-600 flex-shrink-0">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-              </svg>
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0">
-              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Events</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalEvents}</p>
-            </div>
+      {!selectedEvent&&<div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex items-center">
+          <div className="p-2 sm:p-3 rounded-full bg-green-100 text-green-600 flex-shrink-0">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <div className="ml-3 sm:ml-4 min-w-0">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Events</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">{statistics?.totalEvents}</p>
           </div>
         </div>
+      </div>}
 
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center">
@@ -219,7 +216,7 @@ const DashboardStats = () => {
             </div>
             <div className="ml-3 sm:ml-4 min-w-0">
               <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Gifts Collected</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.giftsCollected}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{statistics?.giftsCollected}</p>
             </div>
           </div>
         </div>

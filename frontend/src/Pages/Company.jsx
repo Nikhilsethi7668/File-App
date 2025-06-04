@@ -6,7 +6,7 @@ import { UserContext } from "../Context/UserContext";
 
 const Company = () => {
     const { id } = useParams(); 
-    const { refetch } = useContext(DataContext);
+    const { refetch,fileUserData,getUniqueCompanies } = useContext(DataContext);
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingCompanies, setLoadingCompanies] = useState(false);
@@ -15,15 +15,57 @@ const Company = () => {
     const [count, setCount] = useState(0);
     const [companies, setCompanies] = useState([]);
     const [selectedCompany, setSelectedCompany] = useState();
-    const {user:loggedInUser}=useContext(UserContext)
+    const {user:loggedInUser}=useContext(UserContext);
+    
+    // State for confirmation dialog
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [confirmationData, setConfirmationData] = useState({
+        slotId: null,
+        isCompleted: false,
+        userName: ""
+    });
+
+       useEffect(() => {
+        if (id) {
+            refetch(id);
+        }
+    }, [id]); 
 
     // Fetch companies with slot counts
     useEffect(() => {
         const fetchCompanies = async () => {
             setLoadingCompanies(true);
+              const allCompanyNames = getUniqueCompanies();
             try {
                 const response = await Axios.post('/slot/get-company-slot-counts', { event: id });
-                setCompanies(response.data);
+                
+                 const apiCompanies = response.data || [];
+            
+            // 3. Create a map for quick lookup of API data
+            const apiCompanyMap = new Map();
+            apiCompanies.forEach(company => {
+                apiCompanyMap.set(company.company, {
+                    slotCount: company.slotCount,
+                    userCount: company.userCount || 0
+                });
+            });
+            console.log(allCompanyNames);
+            
+            const combined = allCompanyNames.map(companyName => ({
+                company: companyName,
+                slotCount: apiCompanyMap.get(companyName)?.slotCount || 0,
+                userCount: apiCompanyMap.get(companyName)?.userCount || 0
+            }));
+            
+            combined.sort((a, b) => {
+                if (b.userCount !== a.userCount) {
+                    return b.userCount - a.userCount;
+                }
+                return a.company.localeCompare(b.company);
+            });
+            
+            setCompanies(combined);
+
             } catch (error) {
                 console.error("Error fetching companies:", error);
                 setError("Failed to load companies");
@@ -32,16 +74,12 @@ const Company = () => {
             }
         };
 
-        if (id) {
+        if (id&&fileUserData) {
             fetchCompanies();
         }
-    }, [id]);
+    }, [fileUserData]);
 
-    useEffect(() => {
-        if (id) {
-            refetch(id);
-        }
-    }, [id]); 
+ 
 
     const fetchUsers = async (companyName) => {
         const encodedCompanyName = encodeURIComponent(companyName);
@@ -78,17 +116,29 @@ const Company = () => {
         }
     };
 
-    // Rest of your component remains the same...
-    const toggleCompletion = async (slotId, isCompleted) => {
+    const handleToggleClick = (slotId, isCompleted, userName) => {
+        setConfirmationData({
+            slotId,
+            isCompleted,
+            userName
+        });
+        setShowConfirmation(true);
+    };
+
+    const toggleCompletion = async () => {
+        const { slotId, isCompleted } = confirmationData;
         setUpdatingId(slotId);
+        setShowConfirmation(false);
+        
         try {
-            const response = await Axios.post(`/slot/toggle-completed/${slotId}`, { completed: !isCompleted })
+            const response = await Axios.post(`/slot/toggle-completed/${slotId}`, { completed: !isCompleted });
 
             if (response.status >= 300) throw new Error("Failed to update status");
 
             if (selectedCompany) fetchUsers(selectedCompany);
         } catch (error) {
             console.error("Error updating slot status:", error);
+            alert(`Error: ${error.response?.data?.message || error.message}`);
         } finally {
             setUpdatingId(null);
         }
@@ -96,6 +146,34 @@ const Company = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            {/* Confirmation Dialog */}
+            {showConfirmation && (
+                <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">
+                            {confirmationData.isCompleted ? "Mark as Incomplete?" : "Mark as Completed?"}
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                            Are you sure you want to mark <span className="font-semibold">{confirmationData.userName}</span>'s interview as {confirmationData.isCompleted ? "incomplete" : "completed"}?
+                        </p>
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={() => setShowConfirmation(false)}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={toggleCompletion}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="max-w-4xl mx-auto">
                 <div className="text-center mb-10">
                     <h1 className="text-4xl font-extrabold text-gray-900 mb-2 tracking-tight">
@@ -216,14 +294,18 @@ const Company = () => {
                                             </div>
                                             <div className="flex-shrink-0 sm:w-40">
                                                 <button
-                                                    onClick={() => toggleCompletion(user.slotId, user.completed)}
+                                                    onClick={() => handleToggleClick(
+                                                        user.slotId, 
+                                                        user.completed,
+                                                        `${user.firstName} ${user.lastName}`
+                                                    )}
                                                     className={`w-full px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2
                                                         ${user.completed 
                                                             ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200" 
                                                             : "bg-blue-100 text-blue-800 hover:bg-blue-200"
                                                         }
                                                     `}
-                                                    disabled={updatingId === user.slotId||loggedInUser.role=="viewer"}
+                                                    disabled={updatingId === user.slotId || loggedInUser.role === "viewer"}
                                                 >
                                                     {updatingId === user.slotId ? (
                                                         <>

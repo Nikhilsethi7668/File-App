@@ -6,11 +6,14 @@ import { UserContext } from "../Context/UserContext";
 
 const Meeting = () => {
     const { id } = useParams(); 
-    const { fileUserData, setFileUserData,refetch } = useContext(DataContext);
+    const { fileUserData, setFileUserData, refetch } = useContext(DataContext);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-  const {user:loggedInUser}=useContext(UserContext)
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const { user: loggedInUser } = useContext(UserContext);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [slotToDelete, setSlotToDelete] = useState({ userId: null, slotTime: null });
 
     const generateTimeSlots = () => {
         const slots = [];
@@ -25,10 +28,10 @@ const Meeting = () => {
         setLoading(true);
         try {
             const userResponse = await Axios.get("/files/get-filedata/"+id);
-            if (!userResponse.status>300) throw new Error("Failed to fetch user data");
+            if (userResponse.status >= 300) throw new Error("Failed to fetch user data");
             const userData = await userResponse.data;
-            const slotsResponse = await Axios.post("/slot/get-all-booked-slots",{event:id});
-            if (!slotsResponse.status>300) throw new Error("Failed to fetch slots");
+            const slotsResponse = await Axios.post("/slot/get-all-booked-slots", { event: id });
+            if (slotsResponse.status >= 300) throw new Error("Failed to fetch slots");
             const slotsData = await slotsResponse.data;
 
             const usersWithSlots = userData.users.map((user) => {
@@ -44,38 +47,52 @@ const Meeting = () => {
                 return { ...user, slots: userSlots };
             });
 
-             setFileUserData(usersWithSlots);
+            setFileUserData(usersWithSlots);
             setFilteredUsers(usersWithSlots);
         } catch (error) {
             console.error("Error fetching data:", error);
+            alert("Failed to fetch data: " + error.message);
         } finally {
             setLoading(false);
         }
     };
 
-    const deleteSlot = async (userId, slotTime) => {
-        const isConfirmed = window.confirm("Are you sure you want to delete this slot?");
-        if (!isConfirmed) return;
+    const handleDeleteClick = (userId, slotTime) => {
+        setSlotToDelete({ userId, slotTime });
+        setShowDeleteModal(true);
+    };
 
+    const deleteSlot = async () => {
+        setDeleteLoading(true);
         try {
-            const response = await Axios.delete(`/slot/delete/${userId}`, { data: { slotTime } });
-            if (!response.ok) throw new Error("Failed to delete slot");
+            const response = await Axios.delete(`/slot/delete/${slotToDelete.userId}`, { 
+                data: { event: id, slotTime: slotToDelete.slotTime } 
+            });
 
-            setFileUserData((prevData) =>
-                prevData.map((user) => {
-                    if (user._id === userId) {
-                        const updatedSlots = { ...user.slots };
-                        delete updatedSlots[slotTime];
-                        return { ...user, slots: updatedSlots };
-                    }
-                    return user;
-                })
-            );
+            if (response.status >= 200 && response.status < 300) {
+                setFileUserData((prevData) =>
+                    prevData.map((user) => {
+                        if (user._id === slotToDelete.userId) {
+                            const updatedSlots = { ...user.slots };
+                            delete updatedSlots[slotToDelete.slotTime];
+                            return { ...user, slots: updatedSlots };
+                        }
+                        return user;
+                    })
+                );
+            } else {
+                throw new Error(response.data.message || "Failed to delete slot");
+            }
         } catch (error) {
             console.error("Error deleting slot:", error);
-            alert("Error deleting slot: " + error.message);
+            alert("Error deleting slot: " + (error.response?.data?.message || error.message));
+        } finally {
+            setDeleteLoading(false);
+            setShowDeleteModal(false);
+            setSlotToDelete({ userId: null, slotTime: null });
         }
     };
+
     useEffect(() => {
         if (id) {
             fetchData(id);
@@ -103,6 +120,41 @@ const Meeting = () => {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Deletion</h3>
+                        <p className="text-gray-600 mb-6">Are you sure you want to delete this meeting slot? This action cannot be undone.</p>
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                disabled={deleteLoading}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={deleteSlot}
+                                disabled={deleteLoading}
+                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                            >
+                                {deleteLoading ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Deleting...
+                                    </>
+                                ) : "Delete"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Rest of the component remains the same */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Meeting Schedule</h1>
@@ -200,15 +252,17 @@ const Meeting = () => {
                                                         >
                                                             {user.slots[slot].company}
                                                         </span>
-                                                        {loggedInUser.role!=="viewer"?<button
-                                                            onClick={() => deleteSlot(user._id, slot)}
-                                                            className="text-red-500 disabled:bg-gray-500  disabled:cursor-not-allowed hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
-                                                            title="Delete slot"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>:null}
+                                                        {loggedInUser.role !== "viewer" && (
+                                                            <button
+                                                                onClick={() => handleDeleteClick(user._id, slot)}
+                                                                className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
+                                                                title="Delete slot"
+                                                            >
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 ) : (
                                                     <span className="text-gray-300">-</span>

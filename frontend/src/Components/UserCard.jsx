@@ -80,9 +80,13 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
     const userBookedSlots = slots.filter(slot => slot.userId === user._id);
 
     // Check if a time slot is booked
-  const isTimeSlotBooked = (time) => {
-    return slots.some(slot => slot.timeSlot === time);
-};
+   const isTimeSlotBooked = (time) => {
+        return slots.some(slot => 
+            slot.timeSlot === time && 
+            slot.company === selectedCompany
+        );
+    };
+
 
     // Calculate available slots
     const availableSlots = timeSlots.length - userBookedSlots.length;

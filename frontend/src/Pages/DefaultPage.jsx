@@ -18,12 +18,49 @@ const formatDateTime = (dateString) => {
     hour12: true      // 12-hour format with AM/PM
   });
 };
+
+const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+      >
+        <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
+        <p className="text-gray-600 mb-6">{message}</p>
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+          >
+            Delete
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const DefaultPage = () => {
   const navigate = useNavigate();
-  const {user}=useContext(UserContext)
+  const {user} = useContext(UserContext)
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteDialog, setDeleteDialog] = useState({
+    isOpen: false,
+    eventId: null,
+    eventTitle: ""
+  });
 
   useEffect(() => {
     Axios.get("/events")
@@ -38,14 +75,30 @@ const DefaultPage = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this event?")) return;
     try {
       await Axios.delete(`/events/${id}`);
       setEvents(events.filter(event => event._id !== id));
+      setDeleteDialog({ isOpen: false, eventId: null, eventTitle: "" });
     } catch (err) {
       alert("Failed to delete event");
       console.error(err);
     }
+  };
+
+  const openDeleteDialog = (id, title) => {
+    setDeleteDialog({
+      isOpen: true,
+      eventId: id,
+      eventTitle: title
+    });
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialog({
+      isOpen: false,
+      eventId: null,
+      eventTitle: ""
+    });
   };
 
   const filteredEvents = events.filter(event =>
@@ -77,6 +130,15 @@ const DefaultPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={() => handleDelete(deleteDialog.eventId)}
+        title="Delete Event"
+        message={`Are you sure you want to delete "${deleteDialog.eventTitle}"? This action cannot be undone.`}
+      />
+
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
@@ -235,7 +297,7 @@ const DefaultPage = () => {
                        {user.role!=="viewer"&&<button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDelete(event._id);
+                            openDeleteDialog(event._id, event.title);
                           }}
                           className="text-gray-500 hover:text-red-600 transition p-1"
                           title="Delete event"

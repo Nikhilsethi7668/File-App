@@ -4,8 +4,14 @@ import { Events } from "../model/event.model.js";
 
 export const getDashboardData = async (req, res) => {
   try {
+    const user = req.user
     const { timeRange, eventId } = req.query; // 'week', 'month', or undefined for all time
-
+    if((user.role!=="admin")&&(!eventId)){
+ return res.status(200).json({
+      success: false,
+      message:"Eventy id is required",
+    })
+    }
     // Calculate date ranges based on timeRange parameter
     let dateFilter = {};
     if (timeRange === 'week') {

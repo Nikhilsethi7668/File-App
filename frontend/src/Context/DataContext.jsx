@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 export const DataContext = createContext();
 
 export const DataContextProvider = ({ children }) => {
-    const [fileUserData, setFileUserData] = useState(null);
+    const [fileUserData, setFileUserData] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const { id } = useParams(); 
@@ -30,32 +30,20 @@ export const DataContextProvider = ({ children }) => {
         }
     };
 
-
-   const getUniqueCompaniesWithUserCounts = () => {
-    if (!fileUserData || !Array.isArray(fileUserData)) return [];
+const getUniqueCompanies = () => {    
+    const companySet = new Set();
     
-    // Create a map to store company counts
-    const companyMap = new Map();
-    
-    fileUserData.forEach((user) => {
+    fileUserData?.forEach((user) => {
         if (user.selectedBy && Array.isArray(user.selectedBy)) {
             user.selectedBy.forEach((company) => {
                 if (company) {
-                    // Increment count for this company
-                    const currentCount = companyMap.get(company) || 0;
-                    companyMap.set(company, currentCount + 1);
+                    companySet.add(company);
                 }
             });
         }
     });
     
-    // Convert the map to an array of objects sorted by count (descending)
-    return Array.from(companyMap.entries())
-        .map(([company, count]) => ({
-            company,
-            userCount: count
-        }))
-        .sort((a, b) => b.userCount - a.userCount);
+    return Array.from(companySet);
 };
     
     return (
@@ -63,7 +51,7 @@ export const DataContextProvider = ({ children }) => {
             value={{ 
                 fileUserData, 
                 setFileUserData, 
-                getUniqueCompaniesWithUserCounts,
+                getUniqueCompanies,
                 isLoading,
                 error,
                 refetch: fetchData

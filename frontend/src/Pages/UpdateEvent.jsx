@@ -169,7 +169,7 @@ console.log(event);
           />
         </div>
 
-        <div>
+        {/* <div>
           <label className="block font-medium mb-1">Image URL</label>
           <input
             type="text"
@@ -178,7 +178,7 @@ console.log(event);
             onChange={handleChange}
             className="w-full border rounded px-3 py-2"
           />
-        </div>
+        </div> */}
 
         <div>
           <label className="block font-medium mb-1">Description</label>

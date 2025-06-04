@@ -183,10 +183,20 @@ export const updateEvent = async (req, res) => {
 
 export const getEventTitleList = async (req, res) => {
   try {
-    // Get all events with just title and _id fields
-    const events = await Events.find({}, { title: 1 }).sort({ title: 1 });
+    const user = req.user;
+    let filter = {};
+    
+    // If user is not admin, only show events where user is in assignedTo array
+    if (user.role !== "admin") {
+      filter = { 
+        assignedTo: user._id 
+      };
+    }
 
-    // Transform the data to a simpler format if needed
+    // Get all events with just title and _id fields
+    const events = await Events.find(filter, { title: 1 }).sort({ title: 1 });
+
+    // Transform the data to a simpler format
     const eventList = events.map(event => ({
       id: event._id,
       title: event.title
