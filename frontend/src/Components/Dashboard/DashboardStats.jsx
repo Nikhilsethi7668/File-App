@@ -125,6 +125,7 @@ const DashboardStats = () => {
   // Find selected event name for display
   const selectedEventName = eventOptions.find(option => option.value === selectedEvent)?.label;
 
+  console.log("for new build");
   return (
     <div className="p-3 sm:p-4 lg:p-6 bg-gray-50 min-h-screen">
       {/* Header */}
