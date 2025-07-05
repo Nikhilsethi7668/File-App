@@ -1,25 +1,87 @@
 import React, { useState, useEffect, useContext } from "react";
 import Axios from "../Api/Axios";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { CiClock2, CiCalendar, CiUser, CiMail, CiPhone } from "react-icons/ci";
 import { FiBriefcase, FiTag, FiX, FiCheck } from "react-icons/fi";
 import SlotsContext from "../Context/SlotsContext.jsx";
 import { UserContext } from "../Context/UserContext.jsx";
+import Select from "react-select";
 
-const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, timeSlots = [] }) => {
+const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, timeSlots = [], onUserUpdated, onUserDeleted }) => {
     const [user, setUser] = useState(initialUser);
     const [showBookingForm, setShowBookingForm] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState("");
     const [selectedTime, setSelectedTime] = useState("");
     const { slots, fetchSlots } = useContext(SlotsContext);
     const [isSubmitting, setIsSubmitting] = useState(false);
-      const {user:loggedInUser}=useContext(UserContext)
+    const {user:loggedInUser}=useContext(UserContext)
 
+    // Edit & Delete Dialog State
+    const [showEditDialog, setShowEditDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [editForm, setEditForm] = useState({
+        firstName: initialUser.firstName || '',
+        lastName: initialUser.lastName || '',
+        company: initialUser.company || '',
+        title: initialUser.title || '',
+        email: initialUser.email || '',
+        phone: initialUser.phone || '',
+        status: initialUser.status || 'pending',
+    });
+    const [editLoading, setEditLoading] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
-    
+    useEffect(() => {
+        setEditForm({
+            firstName: initialUser.firstName || '',
+            lastName: initialUser.lastName || '',
+            company: initialUser.company || '',
+            title: initialUser.title || '',
+            email: initialUser.email || '',
+            phone: initialUser.phone || '',
+            status: initialUser.status || 'pending',
+        });
+    }, [initialUser]);
+
+    const handleEditChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setEditForm((prev) => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value,
+        }));
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        setEditLoading(true);
+        try {
+            const response = await Axios.put(`/files/user/${user._id}`, editForm);
+            setShowEditDialog(false);
+            if (onUserUpdated) onUserUpdated();
+            setUser({ ...user, ...editForm });
+        } catch (err) {
+            alert(err.response?.data?.error || 'Failed to update user.');
+        } finally {
+            setEditLoading(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        setDeleteLoading(true);
+        try {
+            await Axios.delete(`/files/user/${user._id}`);
+            setShowDeleteDialog(false);
+            if (onUserDeleted) onUserDeleted();
+        } catch (err) {
+            alert(err.response?.data?.error || 'Failed to delete user.');
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+
     useEffect(() => {
         setUser(initialUser);
     }, [initialUser]);
-
 
     // Highlight matching text in search results
     const highlightMatch = (text) => {
@@ -64,7 +126,7 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
             setShowBookingForm(false);
         } catch (error) {
             console.error("Error booking slot:", error);
-            alert(error.response?.data?.message || "An error occurred while booking. Please try again.");
+            alert(error.response?.data?.error || "An error occurred while booking. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
@@ -108,25 +170,42 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
                                 </span>
                             </div>
                         </div>
-                        
-                        <button
-                            onClick={() => setShowBookingForm(!showBookingForm)}
-                            className={`flex-shrink-0 px-3 py-2 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all ${
-                                userBookedSlots.length >= timeSlots.length
-                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                    : "bg-blue-50 text-blue-600 hover:bg-blue-100"
-                            } flex items-center gap-1 md:gap-2 whitespace-nowrap`}
-                            disabled={userBookedSlots.length >= timeSlots.length}
-                        >
-                            <CiCalendar className="text-base md:text-lg flex-shrink-0" />
-                            <span className="hidden sm:inline">{showBookingForm ? "Close" : "Book Slot"}</span>
-                            <span className="sm:hidden">{showBookingForm ? "Close" : "Book"}</span>
-                            {availableSlots > 0 && (
-                                <span className="bg-blue-100 text-blue-800 text-[10px] md:text-xs px-1.5 md:px-2 py-1 rounded-full flex-shrink-0">
-                                    {availableSlots} left
-                                </span>
-                            )}
-                        </button>
+                        {/* Booking Button + Edit & Delete Buttons */}
+                        <div className="flex gap-2 items-center">
+                            <button
+                                onClick={() => setShowBookingForm(!showBookingForm)}
+                                className={`flex-shrink-0 px-3 py-2 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all ${
+                                    userBookedSlots.length >= timeSlots.length
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                        : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                                } flex items-center gap-1 md:gap-2 whitespace-nowrap`}
+                                disabled={userBookedSlots.length >= timeSlots.length}
+                                title="Book Slot"
+                            >
+                                <CiCalendar className="text-base md:text-lg flex-shrink-0" />
+                                <span className="hidden sm:inline">{showBookingForm ? "Close" : "Book Slot"}</span>
+                                <span className="sm:hidden">{showBookingForm ? "Close" : "Book"}</span>
+                                {availableSlots > 0 && (
+                                    <span className="bg-blue-100 text-blue-800 text-[10px] md:text-xs px-1.5 md:px-2 py-1 rounded-full flex-shrink-0">
+                                        {availableSlots} left
+                                    </span>
+                                )}
+                            </button>
+                            <button
+                                className="p-2 rounded-full hover:bg-blue-50 text-blue-600 border border-transparent hover:border-blue-200"
+                                title="Edit User"
+                                onClick={() => setShowEditDialog(true)}
+                            >
+                                <FiEdit2 />
+                            </button>
+                            <button
+                                className="p-2 rounded-full hover:bg-red-50 text-red-600 border border-transparent hover:border-red-200"
+                                title="Delete User"
+                                onClick={() => setShowDeleteDialog(true)}
+                            >
+                                <FiTrash2 />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="mt-4 space-y-3">
@@ -145,9 +224,11 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
                                     <span className="font-medium text-sm md:text-base">Selected by:</span>
                                     <div className="flex flex-wrap gap-1.5 md:gap-2 mt-2">
                                         {user.selectedBy.map((company, index) => (
-                                            <span key={index} className="bg-gray-100 px-2 py-1 rounded-full text-xs md:text-sm break-words">
-                                                {highlightMatch(company)}
-                                            </span>
+                                           <>
+                                           {company.selected && <span key={index} className="bg-gray-100 px-2 py-1 rounded-full text-xs md:text-sm break-words">
+                                                {highlightMatch(company.name)}
+                                            </span>}
+                                           </>
                                         ))}
                                     </div>
                                 </div>
@@ -194,32 +275,20 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Select Company
-                                </label>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {selectedByOptions.map((company) => (
-                                        <label
-                                            key={company}
-                                            className={`flex items-center p-2 md:p-3 rounded-lg cursor-pointer transition-all ${
-                                                selectedCompany === company
-                                                    ? "bg-blue-50 border border-blue-200"
-                                                    : "bg-gray-50 hover:bg-gray-100"
-                                            }`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="company"
-                                                value={company}
-                                                checked={selectedCompany === company}
-                                                onChange={() => handleCompanyChange(company)}
-                                                className="form-radio h-4 w-4 text-blue-500 border-gray-300 focus:ring-blue-500 flex-shrink-0"
-                                            />
-                                            <span className="ml-3 text-sm md:text-base text-gray-700 break-words min-w-0 flex-1">{company}</span>
-                                            {selectedCompany === company && (
-                                                <FiCheck className="ml-2 text-green-500 flex-shrink-0" />
-                                            )}
-                                        </label>
-                                    ))}
-                                </div>
+                                </label>    
+                                <Select
+                                    className="basic-single"
+                                    classNamePrefix="select"
+                                    options={selectedByOptions.map(company => ({ value: company, label: company }))}
+                                    value={selectedByOptions && selectedCompany ? { value: selectedCompany, label: selectedCompany } : null}
+                                    onChange={option => handleCompanyChange(option.value)}
+                                    isSearchable
+                                    placeholder="Search or select company..."
+                                    styles={{
+                                        menu: provided => ({ ...provided, maxHeight: 180 }),
+                                        menuList: provided => ({ ...provided, maxHeight: 180 }),
+                                    }}
+                                />
                             </div>
 
                             {/* Time Slot Selection */}
@@ -296,9 +365,58 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
                         </form>
                     </div>
                 )}
-            </div>
+            {/* Edit Dialog */}
+            {showEditDialog && (
+                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20">
+                    <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
+                        <h2 className="text-lg font-bold mb-4">Edit User</h2>
+                        <form onSubmit={handleEditSubmit} className="space-y-4">
+                            <div className="flex gap-2">
+                                <input type="text" name="firstName" value={editForm.firstName} onChange={handleEditChange} placeholder="First Name" className="border rounded px-3 py-2 w-1/2" required />
+                                <input type="text" name="lastName" value={editForm.lastName} onChange={handleEditChange} placeholder="Last Name" className="border rounded px-3 py-2 w-1/2" required />
+                            </div>
+                            <input type="text" name="company" value={editForm.company} onChange={handleEditChange} placeholder="Company" className="border rounded px-3 py-2 w-full" />
+                            <input type="text" name="title" value={editForm.title} onChange={handleEditChange} placeholder="Title" className="border rounded px-3 py-2 w-full" />
+                            <input type="email" name="email" value={editForm.email} onChange={handleEditChange} placeholder="Email" className="border rounded px-3 py-2 w-full" required />
+                            <input type="text" name="phone" value={editForm.phone} onChange={handleEditChange} placeholder="Phone" className="border rounded px-3 py-2 w-full" />
+                            {/* <div className="flex gap-2 items-center">
+                                <label className="text-sm font-medium">Gift Collected</label>
+                                <input type="checkbox" name="giftCollected" checked={editForm.giftCollected} onChange={handleEditChange} />
+                            </div> */}
+                            <div>
+                                <label className="text-sm font-medium">Status</label>
+                                <select name="status" value={editForm.status} onChange={handleEditChange} className="border rounded px-3 py-2 w-full">
+                                    <option value="pending">Pending</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="not-available">Not Available</option>
+                                    <option value="removed">Removed</option>
+                                </select>
+                            </div>
+                            <div className="flex gap-2 justify-end mt-4">
+                                <button type="button" className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-700" onClick={() => setShowEditDialog(false)} disabled={editLoading}>Cancel</button>
+                                <button type="submit" className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white" disabled={editLoading}>{editLoading ? 'Saving...' : 'Save'}</button>
+                            </div>
+                        </form>
+                        <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700" onClick={() => setShowEditDialog(false)}>&times;</button>
+                    </div>
+                </div>
+            )}
+            {/* Delete Confirmation Dialog */}
+            {showDeleteDialog && (
+                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20">
+                    <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
+                        <h2 className="text-lg font-bold mb-4 text-red-600">Delete User</h2>
+                        <p className="mb-6">Are you sure you want to delete <b>{user.firstName} {user.lastName}</b>? This action cannot be undone.</p>
+                        <div className="flex gap-2 justify-end">
+                            <button className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-700" onClick={() => setShowDeleteDialog(false)} disabled={deleteLoading}>Cancel</button>
+                            <button className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white" onClick={handleDelete} disabled={deleteLoading}>{deleteLoading ? 'Deleting...' : 'Delete'}</button>
+                        </div>
+                        <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700" onClick={() => setShowDeleteDialog(false)}>&times;</button>
+                    </div>
+                </div>
+            )}
+        </div>
         </div>
     );
 };
-
 export default UserCard;

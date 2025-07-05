@@ -1,9 +1,11 @@
 import React, { useContext, useState } from "react";
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { UserContext } from "../Context/UserContext";
 import { FiMail, FiLock, FiLogIn, FiUser, FiArrowRight } from "react-icons/fi";
+import ForgetPasswordDialog from "../Components/ForgetPasswordDialog";
+import SetPasswordDialog from "../Components/SetPasswordDialog";
 
 const validationSchema = Yup.object({
   email: Yup.string()
@@ -18,6 +20,38 @@ const SignIn = () => {
   const { login, loading, user, logout, isAuthenticated } = useContext(UserContext);
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const [forgetOpen, setForgetOpen] = useState(params.get("forget") === "1");
+  const [setPasswordOpen, setSetPasswordOpen] = useState(!!params.get("email"));
+  const emailParam = params.get("email") || "";
+
+  React.useEffect(() => {
+    setForgetOpen(params.get("forget") === "1");
+    setSetPasswordOpen(!!params.get("email"));
+  }, [location.search]);
+
+  const handleOpenForget = (e) => {
+    e.preventDefault();
+    params.set("forget", "1");
+    navigate({ search: params.toString() }, { replace: true });
+  };
+
+  const handleCloseForget = () => {
+    params.delete("forget");
+    navigate({ search: params.toString() }, { replace: true });
+  };
+
+  const handleForgetSuccess = (email) => {
+    params.delete("forget");
+    params.set("email", email);
+    navigate({ search: params.toString() }, { replace: true });
+  };
+
+  const handleCloseSetPassword = () => {
+    params.delete("email");
+    navigate({ search: params.toString() }, { replace: true });
+  };
 
   const handleLogin = async (data) => {
     try {
@@ -58,6 +92,16 @@ const SignIn = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100 p-4">
+      <ForgetPasswordDialog
+        open={forgetOpen}
+        onClose={handleCloseForget}
+        onSuccess={handleForgetSuccess}
+      />
+      <SetPasswordDialog
+        open={setPasswordOpen}
+        email={emailParam}
+        onClose={handleCloseSetPassword}
+      />
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
         <div className="bg-gradient-to-r from-indigo-600 to-blue-500 p-6 text-white text-center">
           <h2 className="text-2xl font-bold">Welcome back</h2>
@@ -128,9 +172,13 @@ const SignIn = () => {
                       Remember me
                     </label>
                   </div>
-                  <a href="/forgot-password" className="text-sm text-indigo-600 hover:text-indigo-500">
+                  <button
+                    type="button"
+                    className="text-sm text-indigo-600 hover:text-indigo-500 underline bg-transparent border-none p-0 focus:outline-none"
+                    onClick={handleOpenForget}
+                  >
                     Forgot password?
-                  </a>
+                  </button>
                 </div>
 
                 {errorMessage && (

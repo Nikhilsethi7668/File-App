@@ -14,15 +14,8 @@ const Meeting = () => {
     const { user: loggedInUser } = useContext(UserContext);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [slotToDelete, setSlotToDelete] = useState({ userId: null, slotTime: null });
+    const [eventData, setEventData] = useState();
 
-    const generateTimeSlots = () => {
-        const slots = [];
-        for (let hour = 10; hour <= 17; hour++) {
-            slots.push(`${hour.toString().padStart(2, "0")}:00`);
-            if (hour !== 17) slots.push(`${hour.toString().padStart(2, "0")}:30`);
-        }
-        return slots;
-    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -47,8 +40,9 @@ const Meeting = () => {
                 return { ...user, slots: userSlots };
             });
 
-            setFileUserData(usersWithSlots);
-            setFilteredUsers(usersWithSlots);
+            const usersWithBookedSlots = usersWithSlots.filter(user => user.slots && Object.keys(user.slots).length > 0);
+            setFileUserData(usersWithBookedSlots);
+            setFilteredUsers(usersWithBookedSlots);
         } catch (error) {
             console.error("Error fetching data:", error);
             alert("Failed to fetch data: " + error.message);
@@ -112,11 +106,43 @@ const Meeting = () => {
             );
             setFilteredUsers(filtered);
         }
+        if (fileUserData.length > 0 && fileUserData[0].event) {
+            setEventData(fileUserData[0].event);
+          }
     }, [searchQuery, fileUserData]);
 
     useEffect(() => {
         fetchData();
     }, []);
+
+    const generateTimeSlots = () => {
+        // Default to 30 minutes if no event data or slotGap is available
+        const slotGap = eventData?.slotGap || 30;
+        
+        // Calculate total minutes from 10:00 to 17:30 (7.5 hours = 450 minutes)
+        const startTime = 10 * 60; // 10:00 in minutes (600 minutes from midnight)
+        const endTime = 17 * 60 + 30; // 17:30 in minutes (1050 minutes from midnight)
+        const totalMinutes = endTime - startTime; // 450 minutes
+        
+        // Calculate number of slots
+        const numberOfSlots = Math.floor(totalMinutes / slotGap);
+        
+        return Array.from({ length: numberOfSlots }, (_, i) => {
+          const totalMinutesFromStart = startTime + (i * slotGap);
+          const hour = Math.floor(totalMinutesFromStart / 60);
+          const minutes = totalMinutesFromStart % 60;
+          
+          // Format time as HH:MM
+          const formattedHour = hour.toString().padStart(2, '0');
+          const formattedMinutes = minutes.toString().padStart(2, '0');
+          
+          return `${formattedHour}:${formattedMinutes}`;
+        }).filter(time => {
+          // Only include times up to 17:30
+          const [hour, minute] = time.split(':').map(Number);
+          return hour < 17 || (hour === 17 && minute <= 30);
+        });
+      };
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -211,69 +237,61 @@ const Meeting = () => {
                 </div>
             ) : (
                 <div className="space-y-6">
-                    {filteredUsers?.map((user) => (
-                        <div key={user._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-gray-200">
-                                <div className="flex items-center space-x-4">
-                                    <div className="flex-shrink-0 h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                                        {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-medium text-gray-900">
-                                            {user.firstName} {user.lastName}
-                                        </h3>
-                                        <p className="text-sm text-gray-500">
-                                            {user.title} at {user.company}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="overflow-x-auto">
-                                <div className="min-w-max">
-                                    <div className="grid grid-cols-16 gap-0 p-4">
-                                        {generateTimeSlots().map((slot) => (
-                                            <div key={slot} className="text-center py-3 px-2 border-b border-gray-200 font-medium text-xs text-gray-500">
-                                                {slot}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-16 gap-0 p-4">
-                                        {generateTimeSlots().map((slot) => (
-                                            <div key={slot} className="h-20 border-b border-gray-200 flex items-center justify-center">
-                                                {user.slots && user.slots[slot] ? (
-                                                    <div className="flex flex-col items-center gap-1 w-full px-1">
-                                                        <span
-                                                            className={`w-full px-2 py-1 rounded text-xs font-medium ${user.slots[slot].completed
-                                                                    ? "bg-green-100 text-green-800"
-                                                                    : "bg-red-100 text-red-800"
-                                                                }`}
-                                                        >
-                                                            {user.slots[slot].company}
-                                                        </span>
-                                                        {loggedInUser.role !== "viewer" && (
-                                                            <button
-                                                                onClick={() => handleDeleteClick(user._id, slot)}
-                                                                className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
-                                                                title="Delete slot"
-                                                            >
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                </svg>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-gray-300">-</span>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+                   {filteredUsers
+    .filter(user => user.slots && Object.keys(user.slots).length > 0)
+    .map((user) => (
+        <div key={user._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0 h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+                        {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-medium text-gray-900">
+                            {user.firstName} {user.lastName}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                            {user.title} at {user.company}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Show only booked slots with time and company name as badges, not the full slot grid */}
+            {user.slots && Object.keys(user.slots).length > 0 && (
+                <div className="mt-2 flex items-center flex-wrap gap-2 p-2">
+                    <span className="font-medium text-xs text-gray-600">Booked Slots:</span>
+                    {Object.entries(user.slots).map(([slotTime, slotInfo]) => (
+                        <div key={slotTime} className="relative">
+                            <span className={`  bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold ${slotInfo.completed && "bg-green-100 text-green-800"}`}>
+                                {slotTime} - {slotInfo.company}
+                            </span>
+                            {!slotInfo.completed && loggedInUser?.role !== 'viewer' && (
+                                <button
+                                    onClick={() => handleDeleteClick(user._id, slotTime)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none"
+                                    style={{ width: '20px', height: '20px' }}
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        className="w-3 h-3 mx-auto"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                            )}
                         </div>
                     ))}
+                </div>
+            )}
+        </div>
+    ))}
                 </div>
             )}
         </div>

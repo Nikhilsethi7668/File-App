@@ -6,8 +6,6 @@ import { UserContext } from '../../Context/UserContext';
 const DashboardStats = () => {
   const [dashboardData, setDashboardData] = useState({
   statistics: {
-    topCompanies: [],
-    topEvents: [],
     statusDistribution: {}, 
     registrationTrends: [],
     topSelectors: [],
@@ -46,8 +44,11 @@ const DashboardStats = () => {
           value: event.id,
           label: event.title
         }));
-        setSelectedEvent(options[0].value)
         setEventOptions(options);
+        // Only auto-select first event if none is selected and list is not empty
+        if (!selectedEvent && options.length > 0) {
+          setSelectedEvent(options[0].value);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch events:', err);
@@ -106,6 +107,14 @@ const DashboardStats = () => {
     );
   }
 
+  if (!selectedEvent) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-gray-500">Select an event</div>
+      </div>
+    );
+  }
+
   const { statistics } = dashboardData;
 
   // Prepare data for charts
@@ -115,13 +124,8 @@ const DashboardStats = () => {
     fill: COLORS[index % COLORS.length]
   }));
 
-  const eventChartData = statistics?.topEvents?.map((event, index) => ({
-    name: event._id,
-    value: event.count,
-    fill: COLORS[index % COLORS.length]
-  }));
 
-  const statusChartData = Object.entries(statistics?.statusDistribution)?.map(([status, count], index) => ({
+  const statusChartData = Object.entries(statistics?.statusDistribution || {})?.map(([status, count], index) => ({
     name: status.charAt(0).toUpperCase() + status.slice(1),
     value: count,
     fill: COLORS[index % COLORS.length]
@@ -131,15 +135,6 @@ const DashboardStats = () => {
     date: trend.date,
     registrations: trend.count
   }));
-
-  const selectorData = statistics?.topSelectors?.map((selector, index) => ({
-    name: selector._id,
-    count: selector.count,
-    fill: COLORS[index % COLORS.length]
-  }));
-
-  // Find selected event name for display
-  const selectedEventName = eventOptions.find(option => option.value === selectedEvent)?.label;
 
   return (
     <div className="p-3 sm:p-4 lg:p-6 bg-gray-50 min-h-screen">
@@ -165,7 +160,6 @@ const DashboardStats = () => {
             disabled={eventsLoading}
             className="w-full sm:min-w-[250px] lg:min-w-[300px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
           >
-            {user.role==="admin"&&<option value="" >All Events</option>}
             {eventOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -220,77 +214,9 @@ const DashboardStats = () => {
             </div>
           </div>
         </div>
-
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 sm:p-3 rounded-full bg-orange-100 text-orange-600 flex-shrink-0">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-              </svg>
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0">
-              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Status Summary</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                {Object.values(statistics.statusDistribution).reduce((a, b) => a + b, 0)}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {Object.entries(statistics.statusDistribution).map(([status, count]) => 
-                  `${count} ${status}`
-                ).join(', ')}
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
-        {/* Company Distribution Chart */}
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Top Companies Distribution</h3>
-          <ResponsiveContainer width="100%" height={250} className="sm:!h-[300px]">
-            <PieChart>
-              <Pie
-                data={companyChartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {companyChartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Top Events Chart */}
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Top Events</h3>
-          <ResponsiveContainer width="100%" height={250} className="sm:!h-[300px]">
-            <BarChart data={eventChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" fontSize={12} />
-              <YAxis fontSize={12} />
-              <Tooltip />
-              <Bar dataKey="value" fill="#8884d8">
-                {eventChartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Second Row of Charts */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
-        {/* Registration Trends */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8"> 
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Registration Trends</h3>
           <ResponsiveContainer width="100%" height={250} className="sm:!h-[300px]">
@@ -311,7 +237,6 @@ const DashboardStats = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Status Overview */}
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Status Overview</h3>
           <ResponsiveContainer width="100%" height={250} className="sm:!h-[300px]">
@@ -334,7 +259,7 @@ const DashboardStats = () => {
             </PieChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </div> 
 
    
     </div>

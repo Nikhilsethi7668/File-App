@@ -168,8 +168,6 @@ export const getDashboardData = async (req, res) => {
         totalEvents: userStats[0]?.totalEvents || 0,
         giftsCollected: userStats[0]?.giftsCollected || 0,
         statusDistribution: userStats[0]?.statusSummary || {},
-        topCompanies: companyStats,
-        topEvents: eventStats,
         topSelectors: selectionStats,
         registrationTrends: registrationTrends,
       },

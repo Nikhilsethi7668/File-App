@@ -35,9 +35,9 @@ const getUniqueCompanies = () => {
     
     fileUserData?.forEach((user) => {
         if (user.selectedBy && Array.isArray(user.selectedBy)) {
-            user.selectedBy.forEach((company) => {
-                if (company) {
-                    companySet.add(company);
+            user.selectedBy.forEach((companyObj) => {
+                if (companyObj && companyObj.name) {
+                    companySet.add(companyObj.name);
                 }
             });
         }

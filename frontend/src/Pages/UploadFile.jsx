@@ -2,10 +2,11 @@ import React, { useState, useEffect, useContext } from "react";
 import UserCard from "../Components/UserCard";
 import DataContext from "../Context/DataContext";
 import Axios from "../Api/Axios";
-import { FiUpload, FiSearch, FiUsers, FiClock, FiTrash2, FiX, FiCheck, FiPlus } from "react-icons/fi";
+import { FiUpload, FiSearch, FiUsers, FiClock, FiTrash2, FiX, FiCheck, FiPlus, FiDownload } from "react-icons/fi";
 import { useParams } from 'react-router-dom';
 import SignUp2 from "./Signup2";
 import { UserContext } from "../Context/UserContext";
+import DownloadReport from "../Components/DownloadReport";
 
 const FileUpload = () => {
   const { id } = useParams();  
@@ -121,7 +122,11 @@ const FileUpload = () => {
   const getSelectedByOptions = () => {
     const companies = new Set();
     data.forEach(user => {
-      user.selectedBy?.forEach(company => companies.add(company));
+      user.selectedBy?.forEach(companyObj => {
+        if (companyObj && companyObj.name) {
+          companies.add(companyObj.name);
+        }
+      });
     });
     return Array.from(companies);
   };
@@ -133,7 +138,7 @@ const FileUpload = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              Conference Room Booking System
+              Conference Room Booking System 
             </h1>
             <p className="text-gray-600 mt-2">
               Manage attendee schedules and meeting slots
@@ -144,8 +149,8 @@ const FileUpload = () => {
               )}
             </p>
           </div>
-          
-          <div className="flex items-center gap-4">
+          <div className="flex items-center flex-wrap gap-4">
+          <DownloadReport id={id}/>
             <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
               <div className="bg-blue-100 p-2 rounded-full">
                 <FiUsers className="text-blue-600" />
@@ -219,7 +224,14 @@ const FileUpload = () => {
                   accept=".xlsx,.xls" 
                 />
               </label>
-              
+              <button
+                type="button"
+                className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg shadow-sm border border-gray-300 transition-colors"
+                onClick={() => window.open('/format.xlsx', '_blank')}
+              >
+                <FiDownload className="mr-1" />
+                Format
+              </button>
               <button
                 onClick={handleUpload}
                 disabled={loading || !file}
@@ -324,6 +336,8 @@ const FileUpload = () => {
                 searchQuery={searchQuery}
                 selectedByOptions={getSelectedByOptions()}
                 timeSlots={generateTimeSlots()}
+                onUserUpdated={()=>refetch(id)}
+                onUserDeleted={()=>refetch(id)}
               />
             ))}
           </div>

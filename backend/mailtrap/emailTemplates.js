@@ -30,6 +30,37 @@ export const VERIFICATION_EMAIL_TEMPLATE = `
 </html>
 `;
 
+export const OTP_EMAIL_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your OTP for Password Reset</title>
+</head>
+<body style="font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #8A2BE2, #6A1B9A); padding: 25px; text-align: center; border-radius: 8px 8px 0 0;">
+    <h1 style="color: white; margin: 0; font-weight: 300; letter-spacing: 1px;">Password Reset OTP</h1>
+  </div>
+  <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border: 1px solid #f0f0f0;">
+    <p style="color: #444; font-size: 16px;">Hello,</p>
+    <p style="color: #444; font-size: 16px;">We received a request to reset your password for your Meeting Booking account. Use the OTP below to proceed:</p>
+    <div style="text-align: center; margin: 35px 0;">
+      <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #8A2BE2; background-color: #F5F0FF; padding: 15px 30px; border-radius: 6px; border: 2px dashed #D9C2FF;">{otp}</span>
+    </div>
+    <p style="color: #444; font-size: 16px;">Enter this OTP in the password reset form. This code will expire in 1 hour for security reasons.</p>
+    <p style="color: #666; font-size: 14px; margin-top: 25px;">If you did not request a password reset, you can safely ignore this email.</p>
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #f0f0f0;">
+      <p style="color: #444; margin: 0;">Best regards,<br><span style="color: #8A2BE2; font-weight: 500;">Meeting Booking Team</span></p>
+    </div>
+  </div>
+  <div style="text-align: center; margin-top: 20px; color: #999; font-size: 0.8em;">
+    <p>This is an automated message, please do not reply to this email.</p>
+  </div>
+</body>
+</html>
+`;
+
 export const PASSWORD_RESET_SUCCESS_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">

@@ -20,98 +20,148 @@ export const uploadFile = async (req, res) => {
     const sheet = workbook.Sheets[sheetName];
 
     // Convert sheet to JSON (first row as headers)
-    const data = xlsx.utils.sheet_to_json(sheet, { header: 1, raw: false });
+    const data = xlsx.utils.sheet_to_json(sheet, { header: 1, raw: true });
 
     if (data.length < 2) {
-      return res
-        .status(400)
-        .json({ error: "No valid data rows found in the file." });
+      return res.status(400).json({ error: "No valid data rows found in the file." });
     }
 
     // Extract headers from the first row
-    const headers = data[0].map((h) => h.trim().toLowerCase());
+    const headers = data[0].map(h => h ? h.toString().trim() : '');
     console.log("Detected headers:", headers);
 
     // Remove header row
     data.shift();
 
-    // Define schema mapping for your specific headers
-    const fieldMappings = {
-      "sr. no": "serialNo",
-      "first name": "firstName",
-      "last name": "lastName",
-      "company name": "company",
-      "title": "title",
-      "email address": "email",
-      "mobile phone number": "phone",
+    // Define permanent fields mapping
+    const permanentFields = {
+      "Sr. No": "serialNo",
+      "First Name": "firstName",
+      "Last Name": "lastName",
+      "Company Name": "company",
+      "Title": "title",
+      "Email Address": "email",
+      "Mobile Phone Number": "phone"
     };
 
-    const selectionValues = new Set(["1ptr", "1corp", "1str"]); // Your selection values
-
-    // Identify column indexes based on mapping
-    const fieldIndexes = {};
-    headers.forEach((header, index) => {
-      const normalizedHeader = header.toLowerCase().trim();
-      if (fieldMappings[normalizedHeader]) {
-        fieldIndexes[fieldMappings[normalizedHeader]] = index;
-      }
-    });
-
-    // Identify company selection columns (non-schema columns)
-    const companyColumns = headers.filter(
-      (col) => !Object.values(fieldMappings).includes(col.toLowerCase())
+    // Identify brand columns (non-permanent fields)
+    const brandColumns = headers.filter(header => 
+      header && !Object.keys(permanentFields).includes(header)
     );
 
-    // Process each row dynamically
-    const processedData = data
-      .map((row) => {
-        const rowData = { event }; // Add event ID to each record
+    // Selection pattern for brands
+    const selectionPattern = /(1ptr|1corp|1str)/i;
 
-        // Extract mapped fields
-        Object.entries(fieldIndexes).forEach(([field, index]) => {
-          const value = row[index]?.toString().trim();
-          if (value) rowData[field] = value;
-        });
+    // Process each row
+    const processedData = data.map(row => {
+      if (!row || row.length === 0) return null;
 
-        // Check company selections
-        const selectedBy = [];
-        companyColumns.forEach((company) => {
-          const index = headers.indexOf(company);
-          if (index === -1) return;
+      const rowData = { event };
 
-          const value = row[index]?.toString().trim().toLowerCase();
-          if (selectionValues.has(value)) {
-            selectedBy.push(company);
+      // Process permanent fields
+      Object.entries(permanentFields).forEach(([header, field]) => {
+        const index = headers.indexOf(header);
+        if (index >= 0 && row[index] !== undefined && row[index] !== null && row[index] !== '') {
+          rowData[field] = row[index].toString().trim();
+        }
+      });
+
+      // Skip if no email
+      if (!rowData.email) return null;
+
+      // Process brand selections
+      rowData.selectedBy = brandColumns.map(brand => {
+        const index = headers.indexOf(brand);
+        let value = index >= 0 && row[index] ? row[index].toString().trim().toLowerCase() : '';
+        console.log(`Brand: ${brand}, Value: "${value}", Selected: ${selectionPattern.test(value)}`);
+        return {
+          name: brand,
+          selected: selectionPattern.test(value)
+        };
+      }).filter(brand => brand.name); // Remove empty brand names
+
+      return rowData;
+    }).filter(Boolean);
+
+    console.log("Processed Data:", JSON.stringify(processedData, null, 2));
+
+    if (processedData.length === 0) {
+      return res.status(400).json({ error: "No valid data to process" });
+    }
+
+    // Get existing users
+    const existingUsers = await UserCollection.find({ event });
+    const emailMap = new Map(existingUsers.map(user => [user.email.toLowerCase(), user]));
+
+    // Prepare bulk operations
+    const bulkOps = processedData.map(newUser => {
+      const emailKey = newUser.email.toLowerCase();
+      const existingUser = emailMap.get(emailKey);
+
+      if (existingUser) {
+        // For existing users, merge the selectedBy arrays
+        const updatedSelectedBy = [...(existingUser.selectedBy || [])];
+        
+        newUser.selectedBy.forEach(newBrand => {
+          const existingBrandIndex = updatedSelectedBy.findIndex(
+            b => b.name === newBrand.name
+          );
+          
+          if (existingBrandIndex >= 0) {
+            // Update existing brand selection
+            updatedSelectedBy[existingBrandIndex].selected = newBrand.selected;
+          } else {
+            // Add new brand
+            updatedSelectedBy.push(newBrand);
           }
         });
 
-        if (selectedBy.length > 0) {
-          rowData.selectedBy = selectedBy;
-        }
+        return {
+          updateOne: {
+            filter: { _id: existingUser._id },
+            update: {
+              $set: {
+                ...Object.fromEntries(
+                  Object.entries(newUser)
+                    .filter(([key]) => !['_id', 'email', 'selectedBy'].includes(key))
+                    .map(([key, val]) => [key, val])
+                ),
+                selectedBy: updatedSelectedBy
+              }
+            }
+          }
+        };
+      } else {
+        // Insert new user with all brands
+        return {
+          insertOne: {
+            document: {
+              ...newUser,
+              status: "pending",
+              giftCollected: false
+            }
+          }
+        };
+      }
+    });
 
-        return Object.keys(rowData).length > 1 ? rowData : null;
-      })
-      .filter(Boolean);
-
-    console.log("Processed Data:", processedData);
-
-    // Upsert data into database
-    if (processedData.length > 0) {
-      await UserCollection.deleteMany({ event });
-      await UserCollection.insertMany(processedData);
-    } else {
-      return res.status(400).json({ error: "No valid data to insert" });
-    }
+    // Execute bulk write
+    const result = await UserCollection.bulkWrite(bulkOps);
+    console.log("Bulk write result:", result);
 
     return res.status(200).json({
-      message: "File processed and data saved successfully",
-      data: processedData,
+      message: "File processed successfully",
+      updated: result.modifiedCount,
+      inserted: result.insertedCount,
+      total: processedData.length
     });
+
   } catch (error) {
     console.error("Upload error:", error);
     return res.status(500).json({
       error: "Internal Server Error",
       details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
@@ -225,6 +275,41 @@ export const updateUserStatusByEmail = async (req, res) => {
     });
   }
 };
+
+// Update a user by ID
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateFields = req.body;
+    const updatedUser = await UserCollection.findByIdAndUpdate(id, updateFields, { new: true });
+    if(updateFields?.giftCollected){
+      await UserCollection.updateOne({ _id: id }, { $set: { giftBy: req.userId } });
+    }
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    return res.status(200).json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return res.status(500).json({ success: false, error: 'Internal Server Error', details: error.message });
+  }
+};
+
+// Delete a user by ID
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedUser = await UserCollection.findByIdAndDelete(id);
+    if (!deletedUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    return res.status(200).json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return res.status(500).json({ success: false, error: 'Internal Server Error', details: error.message });
+  }
+};
+
 // import { UserCollection } from "../model/filedata.model.js";
 
 // export const deleteSlot = async (req, res) => {

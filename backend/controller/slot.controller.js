@@ -29,19 +29,25 @@ export const deleteSlot = async (req, res) => {
 };
 export const getCompanyData = async (req, res) => {
   try {
-    const companyName = req.params.company.toLowerCase();
+    const companyName = req.params.company.trim();
     const { event } = req.body;
+
     if (!event) {
       return res.status(400).json({ error: "Event id is required" });
     }
 
-    // Find slots for the company and populate specific user fields from UserCollection schema
-    const slots = await Slots.find({ company: companyName,event }).populate(
-      "userId",
-      "serialNo firstName lastName company title email phone selectedBy"
-    );
-
-    // Extract unique users with their details
+    // Case-insensitive, trimmed match
+    const slots = await Slots.find({
+      company: { $regex: `^${companyName}$`, $options: 'i' },
+      event
+    }).populate(
+      {path:"userId",
+      select:"serialNo firstName lastName company title email phone selectedBy giftBy comment giftCollected",
+      populate: {
+        path: "giftBy",
+        select: "username"
+      }
+    });
 
     return res.status(200).json(slots);
   } catch (error) {

@@ -6,6 +6,8 @@ import { User } from "../model/auth.model.js";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { Slots } from "../model/Slots.js";
+import { UserCollection } from "../model/filedata.model.js";
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -210,6 +212,80 @@ export const getEventTitleList = async (req, res) => {
     console.error("Error fetching event titles:", error);
     return res.status(500).json({
       success: false,
+      error: "Internal Server Error",
+      details: error.message
+    });
+  }
+};
+
+export const getEventReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const [event, userStats, slotStats, users, slots] = await Promise.all([
+      Events.findById(id),
+      UserCollection.aggregate([
+        { $match: { event: new mongoose.Types.ObjectId(id) } },
+        { $group: {
+          _id: null,
+          total: { $sum: 1 },
+          pending: { $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] } },
+          completed: { $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] } },
+          notAvailable: { $sum: { $cond: [{ $eq: ["$status", "not-available"] }, 1, 0] } },
+          removed: { $sum: { $cond: [{ $eq: ["$status", "removed"] }, 1, 0] } },
+          giftCollected: { $sum: { $cond: ["$giftCollected", 1, 0] } }
+        }}
+      ]),
+      Slots.aggregate([
+        { $match: { event: new mongoose.Types.ObjectId(id) } },
+        { $group: {
+          _id: null,
+          total: { $sum: 1 },
+          completed: { $sum: { $cond: ["$completed", 1, 0] } },
+          companies: { $push: "$company" }
+        }},
+        { $project: {
+          total: 1,
+          completed: 1,
+          companies: {
+  $reduce: {
+    input: "$companies",
+    initialValue: {},
+    in: {
+      $mergeObjects: [
+        "$$value",
+        {
+          // Use $literal to dynamically set the key as the company name
+          // and $add to increment its count
+          $arrayToObject: [[{
+            k: "$$this",
+            v: { $add: [{ $ifNull: [ { $getField: { field: "$$this", input: "$$value" } }, 0 ] }, 1] }
+          }]]
+        }
+      ]
+    }
+  }
+}
+        }}
+      ]),
+      UserCollection.find({ event: id }),
+      Slots.find({ event: id }).populate('userId')
+    ]);
+    
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    
+    return res.status(200).json({
+      eventDetails: event,
+      userStatistics: userStats[0] || {},
+      slotStatistics: slotStats[0] || {},
+      users: users,
+      slots: slots
+    });
+  } catch (error) {
+    console.error("Error fetching event report:", error);
+    return res.status(500).json({
       error: "Internal Server Error",
       details: error.message
     });
