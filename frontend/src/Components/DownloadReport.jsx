@@ -29,6 +29,7 @@ console.log(data);
         { header: 'Email', key: 'email', width: 30 },
         { header: 'Title', key: 'title', width: 20 },
         { header: 'Gift Collected', key: 'giftCollected', width: 15 },
+        { header:'Comment', key: 'comment', width: 20 },
         ...uniqueCompanies.map(company => ({ header: company, key: `company_${company.replace(/\W/g, '_')}`, width: 20 }))
       ];
 
@@ -51,6 +52,7 @@ console.log(data);
             email: user.email,
             title: user.title,
             giftCollected: user.giftCollected ? 'Yes' : 'No',
+            comment: user.comment,
             ...companyColumns
           });
         });
