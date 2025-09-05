@@ -108,7 +108,7 @@ export const getCompanySlotCounts = async (req, res) => {
     if (!event) {
       return res.status(400).json({ error: "Event id is required" });
     }
-
+    
     // Aggregate to get unique companies with their slot counts
     const companyCounts = await Slots.aggregate([
       { $match: { event: new mongoose.Types.ObjectId(event) } },
@@ -129,7 +129,7 @@ export const getCompanySlotCounts = async (req, res) => {
         }
       }
     ]);
-
+    
     res.json(companyCounts);
   } catch (error) {
     console.error("Error fetching company slot counts:", error);
