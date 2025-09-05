@@ -13,6 +13,7 @@ import authRoutes from "./routes/auth.routes.js";
 import slotRoutes from "./routes/slot.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import otpRoutes from "./routes/otp.routes.js";
+import userRoutes from "./routes/user.routes.js";
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -40,6 +41,7 @@ app.use("/api/events",eventRoutes);
 app.use("/api", slotRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/otp", otpRoutes);
+app.use("/api/users", userRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 // app.use("/api/admin", adminRoutes);
 

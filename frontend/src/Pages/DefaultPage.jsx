@@ -273,7 +273,7 @@ const DefaultPage = () => {
                   {(
                     <div className="h-48 w-full overflow-hidden relative">
                       <img
-                        src={event.image?"https://file-app-api.amiigo.in"+event.image : "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg"}
+                        src={event.image ? import.meta.env.VITE_BASE_URL + event.image : "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg"}
                         alt={event.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />

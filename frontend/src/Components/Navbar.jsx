@@ -45,6 +45,12 @@ const Navbar = () => {
                                 >
                                     <FiCalendar className="inline mr-1" /> Events
                                 </NavLink>
+                                <NavLink 
+                                    to="/users" 
+                                    className={({isActive}) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-blue-700 text-white' : 'text-white hover:bg-blue-500 hover:bg-opacity-75'}`}
+                                >
+                                    <FiUser className="inline mr-1" /> Users
+                                </NavLink>
                                 {id && (
                                     <>
                                         <NavLink 
