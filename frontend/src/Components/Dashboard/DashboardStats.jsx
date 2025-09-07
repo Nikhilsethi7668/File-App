@@ -258,6 +258,12 @@ const DashboardStats = () => {
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
+          {statusChartData.map((entry, index) => (
+            <div key={`cell-${index}`} className="flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.fill }}></div>
+              <span className="ml-2">{entry.name}: <span className="font-bold">{entry.value}</span></span>
+            </div>
+          ))}
         </div>
       </div> 
 

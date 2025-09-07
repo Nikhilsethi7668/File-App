@@ -16,7 +16,7 @@ const UserSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "completed", "not-available", "removed"],
+      enum: ["pending","scheduled", "completed", "not-available", "removed"],
       default: "pending",
       required:true
     },

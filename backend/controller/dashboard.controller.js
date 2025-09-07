@@ -27,51 +27,67 @@ export const getDashboardData = async (req, res) => {
     // Base match conditions - include event filter if eventId is provided
     const baseMatch = { ...dateFilter };
     if (eventId) {
-      baseMatch.event = mongoose.Types.ObjectId.createFromHexString(eventId);
+      // Validate eventId to avoid invalid ObjectId errors
+      const isValid = mongoose.Types.ObjectId.isValid(eventId);
+      if (!isValid) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid eventId",
+        });
+      }
+      baseMatch.event = new mongoose.Types.ObjectId(eventId);
     }
 
     // 1. Get Overall Statistics
-    const userStats = await UserCollection.aggregate([
+    const userStatsAgg = await UserCollection.aggregate([
       { $match: baseMatch },
       {
-        $group: {
-          _id: null,
-          totalUsers: { $sum: 1 },
-          giftsCollected: {
-            $sum: { $cond: [{ $eq: ["$giftCollected", true] }, 1, 0] },
-          },
-          statusCounts: {
-            $push: {
-              status: "$status",
-              count: 1,
+        $facet: {
+          totals: [
+            {
+              $group: {
+                _id: null,
+                totalUsers: { $sum: 1 },
+                giftsCollected: {
+                  $sum: { $cond: [{ $eq: ["$giftCollected", true] }, 1, 0] },
+                },
+                eventsCount: { $addToSet: "$event" },
+              },
             },
-          },
-          eventsCount: { $addToSet: "$event" } // Count distinct events
+            {
+              $project: {
+                _id: 0,
+                totalUsers: 1,
+                giftsCollected: 1,
+                totalEvents: { $size: "$eventsCount" },
+              },
+            },
+          ],
+          status: [
+            { $group: { _id: "$status", count: { $sum: 1 } } },
+            { $project: { _id: 0, k: "$_id", v: "$count" } },
+            { $group: { _id: null, arr: { $push: { k: "$k", v: "$v" } } } },
+            { $project: { _id: 0, statusSummary: { $arrayToObject: "$arr" } } },
+          ],
         },
       },
       {
         $project: {
-          _id: 0,
-          totalUsers: 1,
-          giftsCollected: 1,
-          totalEvents: { $size: "$eventsCount" },
+          totalUsers: { $ifNull: [{ $arrayElemAt: ["$totals.totalUsers", 0] }, 0] },
+          totalEvents: { $ifNull: [{ $arrayElemAt: ["$totals.totalEvents", 0] }, 0] },
+          giftsCollected: { $ifNull: [{ $arrayElemAt: ["$totals.giftsCollected", 0] }, 0] },
           statusSummary: {
-            $arrayToObject: {
-              $map: {
-                input: "$statusCounts",
-                as: "item",
-                in: {
-                  k: "$$item.status",
-                  v: {
-                    $sum: ["$$item.count"],
-                  },
-                },
-              },
-            },
+            $ifNull: [{ $arrayElemAt: ["$status.statusSummary", 0] }, {}],
           },
         },
       },
     ]);
+    const userStats = userStatsAgg[0] || {
+      totalUsers: 0,
+      totalEvents: 0,
+      giftsCollected: 0,
+      statusSummary: {},
+    };
 
     // 2. Get Company-wise Distribution
     const companyStats = await UserCollection.aggregate([
@@ -112,11 +128,13 @@ export const getDashboardData = async (req, res) => {
       ]);
     } else {
       // If eventId is provided, get details for that specific event
-      const eventDetails = await Events.findById(eventId);
+      const eventDetails = mongoose.Types.ObjectId.isValid(eventId)
+        ? await Events.findById(eventId)
+        : null;
       if (eventDetails) {
         eventStats = [{
           _id: eventDetails.title,
-          count: userStats[0]?.totalUsers || 0,
+          count: userStats?.totalUsers || 0,
           eventId: eventDetails._id
         }];
       }
@@ -164,10 +182,10 @@ export const getDashboardData = async (req, res) => {
     // 6. Response Structure
     const dashboardData = {
       statistics: {
-        totalUsers: userStats[0]?.totalUsers || 0,
-        totalEvents: userStats[0]?.totalEvents || 0,
-        giftsCollected: userStats[0]?.giftsCollected || 0,
-        statusDistribution: userStats[0]?.statusSummary || {},
+        totalUsers: userStats?.totalUsers || 0,
+        totalEvents: userStats?.totalEvents || 0,
+        giftsCollected: userStats?.giftsCollected || 0,
+        statusDistribution: userStats?.statusSummary || {},
         topSelectors: selectionStats,
         registrationTrends: registrationTrends,
       },

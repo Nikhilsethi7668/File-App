@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { Slots } from "../model/Slots.js";
-
+import { UserCollection } from "../model/filedata.model.js";
 export const deleteSlot = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -19,6 +19,10 @@ export const deleteSlot = async (req, res) => {
 
     if (!deletedSlot) {
       return res.status(404).json({ error: "Slot not found" });
+    }
+    const user = await UserCollection.findByIdAndUpdate(deletedSlot.userId,{status:"pending"});
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
     }
 
     res.status(200).json({ message: "Slot deleted successfully" });
@@ -69,6 +73,13 @@ export const bookSlot = async (req, res) => {
         .status(400)
         .json({ error: "Slot already booked please choose another slot" });
     }
+    // Prevent booking same company and time for the same event by any user
+    const existingCompanyTime = await Slots.findOne({ event, company, timeSlot });
+    if (existingCompanyTime) {
+      return res
+        .status(400)
+        .json({ error: "This time is already booked for the selected company" });
+    }
     const existingSlot = await Slots.findOne({event, userId, company });
 
     if (existingSlot) {
@@ -79,6 +90,10 @@ export const bookSlot = async (req, res) => {
 
     const newSlot = new Slots({ userId, company, timeSlot,event });
     await newSlot.save();
+    const user = await UserCollection.findByIdAndUpdate(userId,{status:"scheduled"});
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     res.status(201).json({ message: "Slot booked successfully" });
   } catch (error) {
@@ -172,7 +187,10 @@ export const toggleCompletion = async (req, res) => {
     if (!updatedSlot) {
       return res.status(404).json({ error: "Slot not found" });
     }
-
+    const user = await UserCollection.findByIdAndUpdate(updatedSlot.userId,{status:completed?"completed":"scheduled"});
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
     return res.status(200).json({
       message: "Slot updated successfully",
       slot: updatedSlot

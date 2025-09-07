@@ -50,6 +50,7 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
             [name]: type === 'checkbox' ? checked : value,
         }));
     };
+console.log(slots);
 
     const handleEditSubmit = async (e) => {
         e.preventDefault();
@@ -98,6 +99,8 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
 
     const handleCompanyChange = (company) => {
         setSelectedCompany(company);
+        // Reset time selection when company changes to avoid stale selection conflicts
+        setSelectedTime("");
     };
 
     const handleSubmit = async (e) => {
@@ -106,6 +109,27 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
 
         if (!selectedTime || !selectedCompany) {
             alert("Please select a company and a time slot.");
+            setIsSubmitting(false);
+            return;
+        }
+
+        // Prevent duplicate booking with the same company for this event
+        if (hasUserBookedCompany(selectedCompany)) {
+            alert("You have already booked a slot with this company for this event.");
+            setIsSubmitting(false);
+            return;
+        }
+
+        // Prevent booking the same time with a different company for this event
+        if (isTimeSlotBooked(selectedTime)) {
+            alert("You have already booked this time for this event.");
+            setIsSubmitting(false);
+            return;
+        }
+
+        // Prevent booking a time that is already taken for the selected company by another user
+        if (isCompanyTimeTaken(selectedTime)) {
+            alert("This time is already booked for the selected company.");
             setIsSubmitting(false);
             return;
         }
@@ -138,15 +162,28 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
         }
     },[eventId])
 
-    // Filter slots for the current user
-    const userBookedSlots = slots.filter(slot => slot.userId === user._id);
+    // Filter slots for the current user for the current event
+    const userBookedSlots = slots.filter(slot => slot.userId === user._id && slot.event === eventId);
 
-    // Check if a time slot is booked
+    // Check if the current user has already booked this time (for this event), regardless of company
    const isTimeSlotBooked = (time) => {
-        return slots.some(slot => 
-            slot.timeSlot === time && 
-            slot.company === selectedCompany
+        return userBookedSlots.some(slot => slot.timeSlot === time);
+    };
+
+    // Check if any user has booked the same time for the selected company in this event
+    const isCompanyTimeTaken = (time) => {
+        if (!selectedCompany) return false;
+        return slots.some(slot =>
+            slot.timeSlot === time &&
+            slot.company === selectedCompany &&
+            slot.event === eventId
         );
+    };
+
+    // Check if the current user has already booked any slot with the selected company for this event
+    const hasUserBookedCompany = (company) => {
+        if (!company) return false;
+        return userBookedSlots.some(slot => slot.company === company);
     };
 
 
@@ -282,6 +319,7 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
                                     options={selectedByOptions.map(company => ({ value: company, label: company }))}
                                     value={selectedByOptions && selectedCompany ? { value: selectedCompany, label: selectedCompany } : null}
                                     onChange={option => handleCompanyChange(option.value)}
+                                    isOptionDisabled={(option) => hasUserBookedCompany(option.value)}
                                     isSearchable
                                     placeholder="Search or select company..."
                                     styles={{
@@ -289,6 +327,9 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
                                         menuList: provided => ({ ...provided, maxHeight: 180 }),
                                     }}
                                 />
+                                {hasUserBookedCompany(selectedCompany) && (
+                                    <p className="text-xs text-red-600 mt-1">You have already booked a slot with this company.</p>
+                                )}
                             </div>
 
                             {/* Time Slot Selection */}
@@ -301,20 +342,24 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
                                         <button
                                             type="button"
                                             key={time}
-                                            onClick={() => !isTimeSlotBooked(time) && setSelectedTime(time)}
+                                            onClick={() => !isTimeSlotBooked(time) && !isCompanyTimeTaken(time) && !hasUserBookedCompany(selectedCompany) && setSelectedTime(time)}
                                             className={`p-2 md:p-3 rounded-lg text-center transition-all text-sm md:text-base ${
-                                                isTimeSlotBooked(time)
+                                                isTimeSlotBooked(time) || isCompanyTimeTaken(time) || hasUserBookedCompany(selectedCompany)
                                                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                                     : selectedTime === time
                                                     ? "bg-blue-600 text-white"
                                                     : "bg-gray-50 hover:bg-gray-100 text-gray-700"
                                             }`}
-                                            disabled={isTimeSlotBooked(time)}
+                                            disabled={isTimeSlotBooked(time) || isCompanyTimeTaken(time) || hasUserBookedCompany(selectedCompany)}
                                         >
                                             {time}
-                                            {isTimeSlotBooked(time) && (
+                                            {(isTimeSlotBooked(time) || isCompanyTimeTaken(time) || hasUserBookedCompany(selectedCompany)) && (
                                                 <span className="block text-[10px] md:text-xs text-red-500 mt-1">
-                                                    Booked
+                                                    {hasUserBookedCompany(selectedCompany)
+                                                        ? "Already booked with this company"
+                                                        : isTimeSlotBooked(time)
+                                                        ? "Time already booked"
+                                                        : "This time is taken for this company"}
                                                 </span>
                                             )}
                                         </button>
@@ -337,9 +382,9 @@ const UserCard = ({eventId, user: initialUser, searchQuery, selectedByOptions, t
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting || !selectedCompany || !selectedTime|| loggedInUser.role==="viewer"}
+                                    disabled={isSubmitting || !selectedCompany || !selectedTime || hasUserBookedCompany(selectedCompany) || isTimeSlotBooked(selectedTime) || loggedInUser.role==="viewer"}
                                     className={`w-full sm:w-auto px-4 py-2 rounded-lg text-white disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
-                                        isSubmitting || !selectedCompany || !selectedTime
+                                        isSubmitting || !selectedCompany || !selectedTime || hasUserBookedCompany(selectedCompany) || isTimeSlotBooked(selectedTime)
                                             ? "bg-gray-300 cursor-not-allowed"
                                             : "bg-green-500 hover:bg-green-600"
                                     }`}
