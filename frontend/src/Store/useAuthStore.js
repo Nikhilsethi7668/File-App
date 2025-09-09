@@ -14,7 +14,6 @@ export const signup = async (data) => {
 export const checkAuth = async () => {
   try {
     const response = await Axios.get("/auth/check-auth");
-    console.log("response from checkAuth", response);
     return response;
   } catch (error) {
     return error;
@@ -24,10 +23,8 @@ export const checkAuth = async () => {
 export const login = async (email, password) => {
   try {
     const response = await Axios.post("/auth/login", { email, password });
-    console.log("response", response);
     return response.data;
   } catch (error) {
-    console.log("error", error);
     throw error.response?.data?.message || "Error logging in";
   }
 };

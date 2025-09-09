@@ -2,22 +2,46 @@ import React, { useState, useEffect, useContext } from 'react';
 import Axios from '../../Api/Axios';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { UserContext } from '../../Context/UserContext';
+import { Table, Input, Select, Space, Button, Card, Row, Col, Typography } from 'antd';
+import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+const { Title } = Typography;
 
 const DashboardStats = () => {
   const [dashboardData, setDashboardData] = useState({
-  statistics: {
-    statusDistribution: {}, 
-    registrationTrends: [],
-    topSelectors: [],
-    totalUsers: 0,
-    totalEvents: 0,
-    giftsCollected: 0
-  }
-});
+    statistics: {
+      statusDistribution: {}, 
+      registrationTrends: [],
+      topSelectors: [],
+      totalUsers: 0,
+      totalEvents: 0,
+      giftsCollected: 0
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [timeRange, setTimeRange] = useState('all');
-  const {user}=useContext(UserContext)
+  const { user } = useContext(UserContext);
+  
+  // Users table states
+  const [usersData, setUsersData] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [filters, setFilters] = useState({
+    company: '',
+    slot: '',
+    status: '',
+    sortBy: 'desc',
+  });
+  const [companyOptions, setCompanyOptions] = useState([]);
+  const [slotOptions, setSlotOptions] = useState([]);
+  const statusOptions = [
+    { value: 'scheduled', label: 'Scheduled' },
+    { value: 'completed', label: 'Completed' },
+  ];
   
   // Modified state for single select
   const [eventOptions, setEventOptions] = useState([]);
@@ -34,6 +58,13 @@ const DashboardStats = () => {
   useEffect(() => {
     fetchDashboardData();
   }, [timeRange, selectedEvent]);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      fetchUsersData();
+      fetchFilterOptions();
+    }
+  }, [timeRange, selectedEvent, filters, pagination.current]);
 
   const fetchEventOptions = async () => {
     try {
@@ -60,9 +91,10 @@ const DashboardStats = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      if((user.role!=="admin")&&(!selectedEvent)){
-         return;
+      if((user.role !== "admin") && (!selectedEvent)){
+        return;
       }
+      
       // Build params object
       const params = {};
       
@@ -89,7 +121,158 @@ const DashboardStats = () => {
 
   const handleEventChange = (e) => {
     setSelectedEvent(e.target.value);
+    setPagination({ ...pagination, current: 1 });
+    setFilters({
+      company: '',
+      slot: '',
+      status: '',
+      sortBy: 'desc',
+    });
   };
+
+  const fetchFilterOptions = async () => {
+    if (!selectedEvent) return;
+    
+    try {
+      // Fetch unique companies
+      const companiesRes = await Axios.get(`/dashboard/companies/${selectedEvent}`);
+      if (companiesRes.data.success) {
+        setCompanyOptions(companiesRes.data.data.map(company => ({
+          value: company,
+          label: company
+        })));
+      }
+      
+      // Fetch unique time slots
+      const slotsRes = await Axios.get(`/dashboard/slots/${selectedEvent}`);
+      if (slotsRes.data.success) {
+        setSlotOptions(slotsRes.data.data.map(slot => ({
+          value: slot,
+          label: slot
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching filter options:', error);
+    }
+  };
+
+  const fetchUsersData = async () => {
+    if (!selectedEvent) {
+      console.log('No event selected, skipping fetch');
+      return;
+    }
+    
+    try {
+      console.log('Fetching users with filters:', { 
+        eventId: selectedEvent, 
+        ...filters, 
+        page: pagination.current, 
+        limit: pagination.pageSize 
+      });
+      
+      setUsersLoading(true);
+      const response = await Axios.post(`/dashboard/users-slot/${selectedEvent}`, {
+        ...filters,
+        page: pagination.current,
+        limit: pagination.pageSize,
+      });
+      
+      console.log('API Response:', response.data);
+      
+      if (response.data.success) {
+        console.log('Setting users data:', response.data.users);
+        setUsersData(response.data.users || []);
+        setPagination(prev => ({
+          ...prev,
+          total: response.data.total || 0,
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching users data:', error);
+      setUsersData([]);
+      setPagination(prev => ({
+        ...prev,
+        total: 0,
+      }));
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const handleTableChange = (newPagination, filters, sorter) => {
+    setPagination(prev => ({
+      ...prev,
+      current: newPagination.current,
+      pageSize: newPagination.pageSize,
+    }));
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters({
+      ...filters,
+      [key]: value,
+    });
+    setPagination({ ...pagination, current: 1 });
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      company: '',
+      slot: '',
+      status: '',
+      sortBy: 'desc',
+    });
+    setPagination({ ...pagination, current: 1 });
+  };
+
+
+  const columns = [
+    {
+      title: 'Name',
+      key: 'name',
+      render: (_, record) => `${record.firstName || ''} ${record.lastName || ''}`.trim(),
+    },
+    {
+      title: 'Email',
+      dataIndex: 'email',
+      key: 'email',
+    },
+    {
+      title: 'Company',
+      key: 'company',
+      render: (_, record) => record.slots?.company || '-',
+    },
+    {
+      title: 'Time Slot',
+      key: 'timeSlot',
+      render: (_, record) => record.slots?.timeSlot || '-',
+    },
+    {
+      title: 'Status',
+      key: 'status',
+      sorter: true,
+      render: (_, record) => {
+        const isCompleted = record.slots?.completed;
+        const statusText = isCompleted ? 'completed' : 'pending';
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs ${
+            isCompleted 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {statusText.charAt(0).toUpperCase() + statusText.slice(1)}
+          </span>
+        );
+      },
+    },
+    {
+      title: 'Registration Date',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (date) => new Date(date).toLocaleDateString(),
+      sorter: true,
+    },
+  ];
 
   if (loading) {
     return (
@@ -124,20 +307,20 @@ const DashboardStats = () => {
     fill: COLORS[index % COLORS.length]
   }));
 
-
   const statusChartData = Object.entries(statistics?.statusDistribution || {})?.map(([status, count], index) => ({
     name: status.charAt(0).toUpperCase() + status.slice(1),
     value: count,
     fill: COLORS[index % COLORS.length]
   }));
 
-  const trendData = statistics?.registrationTrends?.map(trend => ({
-    date: trend.date,
-    registrations: trend.count
+  const pieChartData = statusChartData.map((entry, index) => ({
+    ...entry,
+    fill: COLORS[index % COLORS.length]
   }));
+console.log("user data is ",usersData);
 
   return (
-    <div className="p-3 sm:p-4 lg:p-6 bg-gray-50 min-h-screen">
+    <div className="p-3 sm:p-4 lg:p-4 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard Analytics</h1>
@@ -216,28 +399,102 @@ const DashboardStats = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8"> 
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Registration Trends</h3>
-          <ResponsiveContainer width="100%" height={250} className="sm:!h-[300px]">
-            <LineChart data={trendData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" fontSize={12} />
-              <YAxis fontSize={12} />
-              <Tooltip />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="registrations" 
-                stroke="#8884d8" 
-                strokeWidth={2}
-                dot={{ fill: '#8884d8' }}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-4 mb-6 sm:mb-8"> 
+        <div className="bg-white p-4 sm:p-6 lg:col-span-3 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-base sm:text-lg font-semibold">Users Status</h3>
+            <Button 
+              icon={<ReloadOutlined />} 
+              onClick={fetchUsersData}
+              loading={usersLoading}
+              size="small"
+            >
+              Refresh
+            </Button>
+          </div>
+          
+          {/* Filters */}
+          <div className="mb-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <Input
+                  placeholder="Search by name/email"
+                  prefix={<SearchOutlined />}
+                  value={filters.search || ''}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  allowClear
+                  size="small"
+                />
+              <Select
+                placeholder="Company"
+                className="w-full"
+                value={filters.company || undefined}
+                onChange={(value) => handleFilterChange('company', value)}
+                options={companyOptions}
+                allowClear
+                size="small"
               />
-            </LineChart>
-          </ResponsiveContainer>
+              <Select
+                placeholder="Status"
+                className="w-full"
+                value={filters.status || undefined}
+                onChange={(value) => handleFilterChange('status', value)}
+                options={statusOptions}
+                allowClear
+                size="small"
+              />
+              <Select
+                placeholder="Time Slot"
+                className="w-full"
+                value={filters.slot || undefined}
+                onChange={(value) => handleFilterChange('slot', value)}
+                options={slotOptions}
+                allowClear
+                size="small"
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button 
+                onClick={handleResetFilters}
+                disabled={!filters.company && !filters.status && !filters.search && !filters.slot}
+                size="small"
+              >
+                Reset Filters
+              </Button>
+            </div>
+          </div>
+          
+          {/* Users Table */}
+          <div className="overflow-x-auto">
+            {!usersLoading && (!usersData || usersData.length === 0) ? (
+              <div className="text-center py-8 text-gray-500">
+                No data available
+              </div>
+            ) : (
+              <Table
+                columns={columns}
+                dataSource={usersData || []}
+                rowKey="_id"
+                loading={usersLoading}
+                pagination={{
+                  current: pagination.current,
+                  pageSize: pagination.pageSize,
+                  total: pagination.total,
+                  showSizeChanger: true,
+                  pageSizeOptions: ['10', '20', '50', '100'],
+                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} users`,
+                }}
+                onChange={handleTableChange}
+                scroll={{ x: true }}
+                size="small"
+                locale={{
+                  emptyText: 'No data available'
+                }}
+              />
+            )}
+          </div>
         </div>
 
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white p-4 sm:p-6 lg:col-span-2 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Status Overview</h3>
           <ResponsiveContainer width="100%" height={250} className="sm:!h-[300px]">
             <PieChart>

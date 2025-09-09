@@ -2,6 +2,80 @@ import mongoose from "mongoose";
 import { UserCollection } from "../model/filedata.model.js";
 import { Events } from "../model/event.model.js";
 
+export const getStatusDistribution = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { timeRange } = req.query;
+
+    // Calculate date ranges based on timeRange parameter
+    let dateFilter = {};
+    if (timeRange === 'week') {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      dateFilter = { createdAt: { $gte: oneWeekAgo } };
+    } else if (timeRange === 'month') {
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+      dateFilter = { createdAt: { $gte: oneMonthAgo } };
+    }
+
+    // Base match conditions
+    const baseMatch = { ...dateFilter };
+    if (eventId && eventId !== 'all') {
+      baseMatch.event = new mongoose.Types.ObjectId(eventId);
+    }
+
+    const statusStats = await UserCollection.aggregate([
+      { $match: baseMatch },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $eq: ["$slots.completed", true] },
+              "completed",
+              "pending"
+            ]
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          status: "$_id",
+          count: 1
+        }
+      }
+    ]);
+
+    // Convert array to object format
+    const result = {
+      completed: 0,
+      pending: 0
+    };
+
+    statusStats.forEach(stat => {
+      if (stat.status === 'completed') {
+        result.completed = stat.count;
+      } else {
+        result.pending = stat.count;
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error("Status distribution error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
 export const getDashboardData = async (req, res) => {
   try {
     const user = req.user
@@ -42,6 +116,15 @@ export const getDashboardData = async (req, res) => {
     const userStatsAgg = await UserCollection.aggregate([
       { $match: baseMatch },
       {
+        $lookup: {
+          from: 'slots',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'slotData'
+        }
+      },
+      { $unwind: { path: "$slotData", preserveNullAndEmptyArrays: true } },
+      {
         $facet: {
           totals: [
             {
@@ -64,7 +147,21 @@ export const getDashboardData = async (req, res) => {
             },
           ],
           status: [
-            { $group: { _id: "$status", count: { $sum: 1 } } },
+            {
+              $match: { "slotData": { $exists: true, $ne: null } }
+            },
+            {
+              $group: {
+                _id: {
+                  $cond: [
+                    { $eq: ["$slotData.completed", true] },
+                    "completed",
+                    "pending"
+                  ]
+                },
+                count: { $sum: 1 }
+              }
+            },
             { $project: { _id: 0, k: "$_id", v: "$count" } },
             { $group: { _id: null, arr: { $push: { k: "$k", v: "$v" } } } },
             { $project: { _id: 0, statusSummary: { $arrayToObject: "$arr" } } },
@@ -77,30 +174,18 @@ export const getDashboardData = async (req, res) => {
           totalEvents: { $ifNull: [{ $arrayElemAt: ["$totals.totalEvents", 0] }, 0] },
           giftsCollected: { $ifNull: [{ $arrayElemAt: ["$totals.giftsCollected", 0] }, 0] },
           statusSummary: {
-            $ifNull: [{ $arrayElemAt: ["$status.statusSummary", 0] }, {}],
+            $ifNull: [{ $arrayElemAt: ["$status.statusSummary", 0] }, { completed: 0, pending: 0 }],
           },
         },
       },
     ]);
+    
     const userStats = userStatsAgg[0] || {
       totalUsers: 0,
       totalEvents: 0,
       giftsCollected: 0,
-      statusSummary: {},
+      statusSummary: { completed: 0, pending: 0 },
     };
-
-    // 2. Get Company-wise Distribution
-    const companyStats = await UserCollection.aggregate([
-      { $match: baseMatch },
-      {
-        $group: {
-          _id: "$company",
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { count: -1 } },
-      { $limit: 5 },
-    ]);
 
     // 3. Get Event-wise Distribution (only if no specific eventId was requested)
     let eventStats = [];
@@ -140,54 +225,13 @@ export const getDashboardData = async (req, res) => {
       }
     }
 
-    // 4. Get Time-based registration data for graphs
-    const registrationTrends = await UserCollection.aggregate([
-      { $match: baseMatch },
-      {
-        $group: {
-          _id: {
-            $dateToString: {
-              format: timeRange === 'week' ? "%Y-%m-%d" : "%Y-%m",
-              date: "$createdAt"
-            }
-          },
-          count: { $sum: 1 },
-          date: { $first: "$createdAt" }
-        }
-      },
-      { $sort: { date: 1 } },
-      {
-        $project: {
-          date: "$_id",
-          count: 1,
-          _id: 0
-        }
-      }
-    ]);
-
-    // 5. Get Selection Stats (selectedBy)
-    const selectionStats = await UserCollection.aggregate([
-      { $match: baseMatch },
-      { $unwind: "$selectedBy" },
-      {
-        $group: {
-          _id: "$selectedBy",
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { count: -1 } },
-      { $limit: 5 }
-    ]);
-
     // 6. Response Structure
     const dashboardData = {
       statistics: {
         totalUsers: userStats?.totalUsers || 0,
         totalEvents: userStats?.totalEvents || 0,
         giftsCollected: userStats?.giftsCollected || 0,
-        statusDistribution: userStats?.statusSummary || {},
-        topSelectors: selectionStats,
-        registrationTrends: registrationTrends,
+        statusDistribution: userStats?.statusSummary || { completed: 0, pending: 0 },
       },
       timeRange: timeRange || 'all',
       eventFilter: eventId || 'all'
@@ -206,3 +250,170 @@ export const getDashboardData = async (req, res) => {
     });
   }
 };
+
+
+// Get unique companies for an event
+export const getEventCompanies = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    
+    if (!eventId) {
+      return res.status(400).json({
+        success: false,
+        message: "Event id is required",
+      });
+    }
+
+    const companies = await UserCollection.findOne({ event: new mongoose.Types.ObjectId(eventId) }, { selectedBy: 1 });
+    const companyNames = companies.selectedBy.map(company => company.name);
+    return res.status(200).json({
+      success: true,
+      data: companyNames
+    });
+  } catch (error) {
+    console.error("Error fetching companies:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+// Get unique time slots for an event
+export const getEventSlots = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    
+    if (!eventId) {
+      return res.status(400).json({
+        success: false,
+        message: "Event id is required",
+      });
+    }
+
+    const slots = await UserCollection.aggregate([
+      { $match: { event: new mongoose.Types.ObjectId(eventId) } },
+      { $lookup: { from: "slots", localField: "_id", foreignField: "userId", as: "slots" } },
+      { $unwind: "$slots" },
+      { $group: { _id: "$slots.timeSlot" } },
+      { $project: { _id: 0, timeSlot: "$_id" } },
+      { $sort: { timeSlot: 1 } }
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: slots.map(s => s.timeSlot).filter(Boolean)
+    });
+  } catch (error) {
+    console.error("Error fetching time slots:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+export const getUsersListCompanywise = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { company,search, slot, status, sortBy = 'desc', page = 1, limit = 10 } = req.body;
+    const skip = (page - 1) * limit;
+
+    if (!eventId) {
+      return res.status(400).json({
+        success: false,
+        message: "Event id is required",
+      });
+    }
+
+    // Build the base pipeline
+    const pipeline = [
+      // Match by event first for better performance
+      { $match: { event: new mongoose.Types.ObjectId(eventId) } },
+      
+      // Lookup slots
+      {
+        $lookup: {
+          from: "slots",
+          localField: "_id",
+          foreignField: "userId",
+          as: "slots"
+        }
+      },
+      { $unwind: "$slots" },
+      
+      // Apply filters
+      {
+        $match: {
+          ...(status && { 'slots.completed':status=="completed" }),
+          ...(company && { 'slots.company': company }),
+          ...(slot && { 'slots.timeSlot': slot }),
+          ...(search && { $or: [
+            { firstName: { $regex: search, $options: 'i' } },
+            { lastName: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } }
+          ] })
+        }
+      },
+      
+      // Sort
+      { $sort: { createdAt: sortBy === "asc" ? 1 : -1 } },
+      
+      // Project only needed fields
+      {
+        $project: {
+          _id: {
+            $toString: {
+              $concat: [
+                { $ifNull: [{ $toString: "$_id" }, ""] },
+                "_",
+                { $toString: { $floor: { $multiply: [1000, { $rand: {} }] } } }
+              ]
+            }
+          },
+          firstName: 1,
+          lastName: 1,
+          email: 1,
+          createdAt: 1,
+          'slots.timeSlot': 1,
+          'slots.completed': 1,
+          'slots.company': 1,
+          'slots._id': 1
+        }
+      }
+    ];
+
+    // Get total count for pagination
+    const countPipeline = [...pipeline];
+    countPipeline.push({ $count: 'total' });
+    const countResult = await UserCollection.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
+
+    // Add pagination to the main pipeline
+    pipeline.push(
+      { $skip: skip },
+      { $limit: parseInt(limit) }
+    );
+
+    const data = await UserCollection.aggregate(pipeline);
+
+    return res.status(200).json({ 
+      success: true, 
+      users: data,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / limit)
+    });
+  } catch (error) {
+    console.error("Error fetching users list:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+        

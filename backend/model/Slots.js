@@ -18,7 +18,7 @@ const slotSchema = new mongoose.Schema(
     completed: {
       type: Boolean,
       default: false,
-    },
+    }, 
       event: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Event",

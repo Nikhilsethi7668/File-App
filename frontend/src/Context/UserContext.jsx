@@ -44,26 +44,26 @@ const UserProvider = ({ children }) => {
 
     // Login function
     const login = async (credentials) => {
-        console.log("credentials", credentials);
         setLoading(true);
         try {
             const response = await loginService(credentials);
             if (response.success) {
+                alert(response.message);
                 setUser(response.user);
                 setIsAuthenticated(true);
                 if (response.user && response.user._id) {
                     localStorage.setItem("userId", response.user._id);
                 }
-                alert("Logged in successfully")
-                console.log("User logged in:", user);
                 return;
             }
+            alert(response.message);
 
 
 
 
         } catch (error) {
-            alert("Error while logging in")
+            console.log(error)
+            alert(error)
             console.error("Login failed:", error);
             setError("Login failed. Please try again.");
             throw error;
@@ -96,10 +96,11 @@ const UserProvider = ({ children }) => {
         try {
             const response = await signupService(userData);
             setUser(response.data.user);
+            alert(response.message);
             // setIsAuthenticated(true);
         } catch (error) {
             console.error("Signup failed:", error.message);
-            setError("Signup failed. Please try again.");
+            setError(error.message);
             throw error;
         } finally {
             setLoading(false);
@@ -110,11 +111,9 @@ const UserProvider = ({ children }) => {
         try {
             if (response.success) {
                 setIsAuthenticated(true);
-                console.log("User logged in:", user);
                 return;
             }
         } catch (error) {
-            console.error("CheckAuth failed:", error);
             setIsAuthenticated(false);
             return;
         } finally {

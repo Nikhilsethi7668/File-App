@@ -10,11 +10,17 @@ export const signup = async (req, res) => {
   try {
     // Validation
     if (!username || !email || !password) {
-      throw new Error("Username, email and password are required");
+     return res.status(400).json({
+        success: false,
+        message: "Username, email and password are required",
+      });
     }
 
     if (role && !["manager", "viewer", "admin"].includes(role)) {
-      throw new Error("Invalid role specified");
+     return res.status(400).json({
+        success: false,
+        message: "Invalid role specified",
+      });
     }
 
     // Check for existing users
@@ -123,17 +129,14 @@ export const signup = async (req, res) => {
 // };
 
 export const login = async (req, res) => {
-  console.log("login");
-  console.log(req.body);
+  
   const { email, password } = req.body.email;
-  console.log(email, password);
-
   try {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "Invalid Credentials",
+        message: "User Not Found",
       });
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -143,8 +146,7 @@ export const login = async (req, res) => {
         message: "Invalid Credentials",
       });
     }
-    console.log("user", user);
-
+    
     generateTokenAndCookie(res, user._id);
 
     user.lastLogin = new Date();
@@ -159,7 +161,6 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log("error", error);
     res.status(400).json({
       success: false,
       message: `Login Failes : ${error}`,
@@ -181,7 +182,6 @@ export const usersList = async (req, res) => {
       users
     });
   } catch (error) {
-    console.log("error", error);
     res.status(400).json({
       success: false,
       message: `Failes : ${error}`,
