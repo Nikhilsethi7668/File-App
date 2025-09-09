@@ -23,7 +23,7 @@ const app = express();
 const PORT = process.env.PORT || 8493;
 // CORS Configuration (Apply this before routes)
 const corsOptions = {
-  origin:[ "https://file-app-frontend.amiigo.in","http://localhost:5173"],
+  origin:[ "https://file-app-frontend.amiigo.in","http://localhost:5173","https://idc.loopnow.in"],
   credentials: true,
 };
 
