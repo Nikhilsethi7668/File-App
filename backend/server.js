@@ -23,11 +23,34 @@ const app = express();
 const PORT = process.env.PORT || 8493;
 // CORS Configuration (Apply this before routes)
 const corsOptions = {
-  origin:[ "https://file-app-frontend.amiigo.in","http://localhost:5173","https://idc.loopnow.in"],
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      "https://file-app-frontend.amiigo.in",
+      "http://localhost:5173",
+      "https://idc.loopnow.in"
+    ];
+    
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    
+    return callback(null, true);
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['set-cookie']
 };
 
-app.use(cors(corsOptions)); // <-- Fix: Apply CORS Middleware Here
+// Apply CORS middleware with the above options
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Middleware
 app.use(express.json());
