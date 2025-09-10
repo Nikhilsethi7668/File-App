@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Axios from "../Api/Axios";
+import Axios, { BASE_URL } from "../Api/Axios";
 import { FiCalendar, FiClock, FiMapPin, FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { useContext } from "react";
@@ -273,7 +273,7 @@ const DefaultPage = () => {
                   {(
                     <div className="h-48 w-full overflow-hidden relative">
                       <img
-                        src={event.image ? import.meta.env.VITE_BASE_URL + event.image : "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg"}
+                        src={event.image ? BASE_URL + event.image : "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg"}
                         alt={event.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />

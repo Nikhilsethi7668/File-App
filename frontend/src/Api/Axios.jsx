@@ -1,8 +1,9 @@
 import axios from 'axios'
 import React from 'react'
 
+export const BASE_URL = "https://file-app-api.amiigo.in";
 const Axios = axios.create({
-    baseURL: "https://file-app-api.amiigo.in/api",
+    baseURL: BASE_URL+`/api`,
     // baseURL: "http://localhost:8493/api",
     withCredentials: true,
     headers: {
